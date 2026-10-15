@@ -4,9 +4,14 @@
 <script>
 import { Head, Link, router } from '@statamic/cms/inertia';
 import { Badge, Button, Header, Input, Panel, Table, TableCell, TableColumn, TableColumns, TableRow, TableRows } from '@statamic/cms/ui';
+import icon from '../../brand/nav-icon.svg?raw';
 
 export default {
     components: { Badge, Button, Head, Header, Input, Link, Panel, Table, TableCell, TableColumn, TableColumns, TableRow, TableRows },
+
+    computed: {
+        icon: () => icon,
+    },
 
     props: {
         list: { type: Object, required: true },
@@ -41,7 +46,7 @@ export default {
             <Link :href="urls.index" class="text-gray-500 hover:underline!">← {{ __('Wishlists') }}</Link>
         </div>
 
-        <Header :title="list.title" icon="favorite-heart">
+        <Header :title="list.title" :icon="icon">
             <Button v-if="canDelete" variant="danger" :text="__('Delete')" @click="destroy" />
         </Header>
 

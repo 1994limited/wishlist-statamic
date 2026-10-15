@@ -5,9 +5,14 @@
 <script>
 import { Head, Link, router } from '@statamic/cms/inertia';
 import { Alert, Badge, Header, Heading, Input, Panel, Subheading, Table, TableCell, TableColumn, TableColumns, TableRow, TableRows } from '@statamic/cms/ui';
+import icon from '../../brand/nav-icon.svg?raw';
 
 export default {
     components: { Alert, Badge, Head, Header, Heading, Input, Link, Panel, Subheading, Table, TableCell, TableColumn, TableColumns, TableRow, TableRows },
+
+    computed: {
+        icon: () => icon,
+    },
 
     props: {
         driver: { type: String, required: true },
@@ -48,7 +53,7 @@ export default {
     <Head :title="__('Wishlists')" />
 
     <div class="mx-auto max-w-5xl">
-        <Header :title="__('Wishlists')" icon="favorite-heart" />
+        <Header :title="__('Wishlists')" :icon="icon" />
 
         <Alert
             v-if="!storesOnServer"

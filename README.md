@@ -2,7 +2,7 @@
 
 Let visitors save entries to wishlists, keep as many named lists as they like, and share any of them with a link.
 
-![A bookshop's shelves, with three books saved by their bookmark ribbons](docs/images/shop.png)
+![A bookshop's shelves, with three books saved by their bookmark ribbons](docs/marketplace/cover-1600x900.png)
 
 Keep lists in **flat files**, in the **database**, or only in **the visitor's own browser**, so nothing about them is stored on your server. Your templates are the same whichever you choose.
 
