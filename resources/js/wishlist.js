@@ -447,7 +447,24 @@
 
     // The list picked in a [data-wishlist-lists] select, which list
     // forms and drawn lists follow. A new list is picked as it's made.
+    // It's remembered in this browser, so it's still picked on the next page.
+    var pickedKey = config.storageKey + '.picked';
     var picked = null;
+    try {
+        picked = sessionStorage.getItem(pickedKey);
+    } catch (e) {
+        // Storage blocked: the pick lasts for this page.
+    }
+
+    function pick(listId) {
+        picked = listId || null;
+        try {
+            if (picked) sessionStorage.setItem(pickedKey, picked);
+            else sessionStorage.removeItem(pickedKey);
+        } catch (e) {
+            // As above.
+        }
+    }
 
     function pickedList() {
         var l = (picked && list(picked)) || list();
@@ -459,7 +476,7 @@
             return store
                 .run(action, payload)
                 .then(function (result) {
-                    if (action === 'create' && result && result.list) picked = result.list.id;
+                    if (action === 'create' && result && result.list) pick(result.list.id);
                     return result;
                 })
                 .then(changed, failed);
@@ -482,7 +499,7 @@
             return pickedList();
         },
         pick: function (listId) {
-            picked = listId;
+            pick(listId);
             refresh();
         },
         add: function (id, options) {
@@ -556,6 +573,8 @@
     }
 
     function refresh() {
+        // Pickers first: a form saving to the list chosen in it needs it filled.
+        document.querySelectorAll('select[data-wishlist-lists]').forEach(fillPicker);
         document.querySelectorAll('[data-wishlist-toggle]').forEach(function (el) {
             var added = has(el.getAttribute('data-wishlist-toggle'), el.getAttribute('data-wishlist-list') || undefined);
             el.setAttribute('aria-pressed', added ? 'true' : 'false');
@@ -564,8 +583,9 @@
         });
 
         document.querySelectorAll('form[data-wishlist-form][data-wishlist-id]').forEach(function (form) {
-            var listField = form.querySelector('input[name="list"]');
-            var added = has(formReference(form), listField ? listField.value : undefined);
+            // The list it saves to: its own, or one chosen in it.
+            var listField = form.elements.namedItem('list');
+            var added = has(formReference(form), listField && listField.value ? listField.value : undefined);
             form.setAttribute('data-wishlist-active', added ? 'true' : 'false');
             form.querySelectorAll('[type="submit"], button:not([type])').forEach(function (button) {
                 button.setAttribute('aria-pressed', added ? 'true' : 'false');
@@ -577,7 +597,6 @@
             el.textContent = count(el.getAttribute('data-wishlist-count') || undefined);
         });
 
-        document.querySelectorAll('select[data-wishlist-lists]').forEach(fillPicker);
 
         // Nothing to copy until there's a list with a link.
         document.querySelectorAll('[data-wishlist-copy-share], [data-wishlist-native-share]').forEach(function (el) {
@@ -761,7 +780,7 @@
 
     document.addEventListener('change', function (event) {
         if (event.target.matches && event.target.matches('select[data-wishlist-lists]')) {
-            picked = event.target.value;
+            pick(event.target.value);
             refresh();
         } else if (event.target.name === 'variant' && event.target.form && event.target.form.hasAttribute('data-wishlist-form')) {
             refresh();

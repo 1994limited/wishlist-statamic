@@ -248,7 +248,7 @@ Visitors can keep more than one list: "Birthday", "Kitchen ideas". Add a picker,
 
 </details>
 
-The script fills the picker with the visitor's lists. The drawn list, the share link and the rename and delete forms all follow whichever list is picked, and a new list is picked as it's made.
+The script fills the picker with the visitor's lists. The drawn list, the share link and the rename and delete forms all follow whichever list is picked, and a new list is picked as it's made. The pick is remembered for the rest of the visit (in the browser tab's `sessionStorage`), so it's still picked on the next page.
 
 Save buttons put things on the visitor's **default** list (their first, unless they make another the default). To save to a particular list, pass `list="…"`:
 
@@ -276,6 +276,35 @@ Save buttons put things on the visitor's **default** list (their first, unless t
 </details>
 
 (`{{ wishlist:lists }}` reads lists on the server, so this needs the file or database driver.)
+
+Or let the visitor choose, with a picker named `list` inside the form. It works with every driver, starts on the picked list, and the button's added state follows it:
+
+```antlers
+{{ wishlist:add id="{{ id }}" }}
+    <label>Save to <select name="list" data-wishlist-lists></select></label>
+    <button type="submit">
+        <span data-wishlist-when="not-added">Save</span>
+        <span data-wishlist-when="added">Saved to this list</span>
+    </button>
+{{ /wishlist:add }}
+```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+<s:wishlist:add :id="$id">
+    <label>Save to <select name="list" data-wishlist-lists></select></label>
+    <button type="submit">
+        <span data-wishlist-when="not-added">Save</span>
+        <span data-wishlist-when="added">Saved to this list</span>
+    </button>
+</s:wishlist:add>
+```
+
+</details>
+
+Without JavaScript the picker is empty, and the form saves to the default list. To change which list one-tap buttons save to, give visitors `{{ wishlist:make_default }}` (see [Tags](tags.md)).
 
 ## 6. Share links
 
