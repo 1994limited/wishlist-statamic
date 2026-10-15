@@ -2,7 +2,7 @@
 
 Complete templates to copy. They work with all three drivers, with or without static caching. Class names are placeholders: use your own.
 
-These are the templates behind the screenshots in these docs, simplified. The full demo also draws its book covers in CSS.
+These are the templates behind the screenshots in these docs, simplified. The [demo shop](demo.md) has them in full, as a site you can run.
 
 ![The demo shop on a phone](images/shop-mobile.png)
 

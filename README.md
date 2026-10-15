@@ -22,7 +22,7 @@ Keep lists in **flat files**, in the **database**, or only in **the visitor's ow
 | --- | --- | --- |
 | ![The saved books page](docs/images/wishlist.png) | ![A shared list](docs/images/shared.png) | ![Content → Wishlists](docs/images/cp-wishlists.png) |
 
-The screenshots are from Dog-ear Books, a made-up shop built only with the tags and attributes in [the docs](docs/README.md).
+The screenshots are from Dog-ear Books, a made-up shop built only with the tags and attributes in [the docs](docs/README.md). **[Try the demo](https://github.com/1994limited/wishlist-statamic-demo)**: it runs locally in a few commands, with no licence needed. See [The demo shop](docs/demo.md).
 
 ## Requirements
 
@@ -67,7 +67,7 @@ Lists are kept in flat files by default. For the database, or the visitor's brow
 Everything else is in [the documentation](docs/README.md):
 
 - [Installation](docs/installation.md) and [storage drivers](docs/drivers.md)
-- [Templates](docs/templates.md), [tags](docs/tags.md) and [examples](docs/examples.md)
+- [Templates](docs/templates.md), [tags](docs/tags.md), [examples](docs/examples.md) and [the demo shop](docs/demo.md)
 - [JavaScript](docs/javascript.md) and [share links](docs/sharing.md)
 - [Guests and signing in](docs/guests.md) and [the Control Panel](docs/control-panel.md)
 - [Configuration](docs/configuration.md), [HTTP API](docs/http-api.md), [PHP API](docs/php-api.md) and [troubleshooting](docs/troubleshooting.md)
