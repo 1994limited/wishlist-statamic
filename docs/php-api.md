@@ -35,7 +35,7 @@ $wishlists->regenerateShareKey($owner, $listId);
 [$list, $count] = $wishlists->import($owner, [$id1, $id2], $listId = null);
 $wishlists->merge($guestOwner, $userOwner);
 
-$wishlists->allowed($entryId);                  // could it be saved?
+$wishlists->allowed($entryId);                  // could it be saved? (and, with Cargo, is the variant the product's)
 ```
 
 A list ID of `null` means the owner's default list. `add`, `toggle` and `import` make it if they have none. A rule broken (an entry that can't be saved, a limit, someone else's list) throws `NineteenNinetyFour\Wishlist\WishlistException`, whose message is safe to show and whose `status` is the HTTP status to answer with.
@@ -59,9 +59,26 @@ $list->items();            // Collection of Item
 $list->item($entryId);     // Item or null
 ```
 
-`NineteenNinetyFour\Wishlist\Item` has `reference` (the entry's ID), `addedAt` and `data` (the item fields), and `resolve()` for the entry itself (or null if it's gone).
+`NineteenNinetyFour\Wishlist\Item` has `reference` (the entry's ID, `taxonomy::slug` for a term, or `entry-id#variant` for a [Cargo variant](cargo.md#variants)), `addedAt` and `data` (the item fields, plus `saved_price` and `saved_currency` for Cargo products), and `resolve()` for the entry itself (or null if it's gone).
+
+`NineteenNinetyFour\Wishlist\Reference` reads references: `Reference::base($ref)` (the entry's ID), `Reference::variant($ref)` (the variant's key, or null), `Reference::make($id, $variant)` and `Reference::find($ref)` (the entry or term).
 
 The share link: `app(\NineteenNinetyFour\Wishlist\Presenter::class)->shareUrl($list)`.
+
+## Cargo
+
+`NineteenNinetyFour\Wishlist\Integrations\Cargo` is what the tags use with [Cargo](cargo.md):
+
+```php
+use NineteenNinetyFour\Wishlist\Integrations\Cargo;
+
+$cargo = app(Cargo::class);
+
+$cargo->installed();                 // a supported Cargo is installed
+$cargo->price($reference);           // the price now, in pence or cents, or null
+$cargo->describe($item, $entry);     // the item's `cargo` values, or null if it isn't a product
+$cargo->addToCart($list);            // ['added' => 2, 'skipped' => [references]]
+```
 
 ## The repository
 
@@ -77,16 +94,16 @@ $repository->find($id);
 $repository->findByShareKey($key);
 $repository->forOwner($owner);
 $repository->paginate(perPage: 25, page: 1, search: 'birthday');
-$repository->popular(10);                    // [entryId => number of lists], most first
+$repository->popular(10);                    // [reference => number of lists], most first (Cargo variants count apart)
 $repository->save($list);
 $repository->delete($list);
 ```
 
-For example, everyone who saved an entry:
+For example, everyone who saved an entry (in any variant):
 
 ```php
 $owners = $repository->all()
-    ->filter(fn ($list) => $list->has($entry->id()))
+    ->filter(fn ($list) => $list->items()->contains(fn ($item) => Reference::base($item->reference) === $entry->id()))
     ->map(fn ($list) => Owner::fromString($list->owner()))
     ->filter(fn ($owner) => $owner->isUser())
     ->map(fn ($owner) => $owner->toUser())

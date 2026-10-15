@@ -234,7 +234,7 @@ The partial:
                 {{ if wishlist_item:quantity }}<span>× {{ wishlist_item:quantity }}</span>{{ /if }}
                 {{ if wishlist_item:notes }}<p>{{ wishlist_item:notes }}</p>{{ /if }}
                 <small>Saved {{ wishlist_item:added_at format="j M" }}</small>
-                <button {{ wishlist:toggle_attrs id="{{ id }}" }}>Remove</button>
+                <button {{ wishlist:toggle_attrs :id="wishlist_item:id" }}>Remove</button>
             </li>
         {{ /items }}
     </ul>
@@ -258,7 +258,7 @@ The partial:
                 @if ($item['wishlist_item']['quantity'] ?? null)<span>× {!! $item['wishlist_item']['quantity'] !!}</span>@endif
                 @if ($item['wishlist_item']['notes'] ?? null)<p>{!! $item['wishlist_item']['notes'] !!}</p>@endif
                 <small>Saved {{ \Carbon\Carbon::parse($item['wishlist_item']['added_at'])->format('j M') }}</small>
-                <button {!! Statamic::tag('wishlist:toggle_attrs')->param('id', $item['id'])->fetch() !!}>Remove</button>
+                <button {!! Statamic::tag('wishlist:toggle_attrs')->param('id', $item['wishlist_item']['id'])->param('list', $wishlist_list_id ?? null)->fetch() !!}>Remove</button>
             </li>
         @endforeach
     </ul>
@@ -298,7 +298,7 @@ form[data-wishlist-error]::after { content: attr(data-wishlist-error); display: 
             <li class="card">
                 <a href="{{ url }}">{{ title }}</a>
                 {{ if wishlist_item:notes }}<p>{{ wishlist_item:notes }}</p>{{ /if }}
-                {{ wishlist:toggle id="{{ id }}" }}
+                {{ wishlist:toggle :id="wishlist_item:id" }}
                     <button type="submit">
                         <span data-wishlist-when="not-added">♡ Save</span>
                         <span data-wishlist-when="added">♥ Saved</span>
@@ -335,7 +335,7 @@ form[data-wishlist-error]::after { content: attr(data-wishlist-error); display: 
             <li class="card">
                 <a href="{{ $item['url'] }}">{{ $item['title'] }}</a>
                 @if ($item['wishlist_item']['notes'] ?? null)<p>{!! $item['wishlist_item']['notes'] !!}</p>@endif
-                <s:wishlist:toggle :id="$item['id']">
+                <s:wishlist:toggle :id="$item['wishlist_item']['id']">
                     <button type="submit">
                         <span data-wishlist-when="not-added">♡ Save</span>
                         <span data-wishlist-when="added">♥ Saved</span>

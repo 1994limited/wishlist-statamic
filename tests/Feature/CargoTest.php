@@ -6,15 +6,18 @@ use DuncanMcClean\Cargo\Facades\Cart;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Facades\Blade;
 use NineteenNinetyFour\Wishlist\Integrations\Cargo;
+use NineteenNinetyFour\Wishlist\Item;
 use NineteenNinetyFour\Wishlist\Owner;
 use NineteenNinetyFour\Wishlist\Presenter;
 use NineteenNinetyFour\Wishlist\Reference;
 use NineteenNinetyFour\Wishlist\ShareCodec;
 use NineteenNinetyFour\Wishlist\Tests\CargoTestCase;
 use NineteenNinetyFour\Wishlist\WishlistException;
+use NineteenNinetyFour\Wishlist\Wishlists;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\Attributes\Test;
 use Statamic\Facades\Entry;
+use Statamic\Facades\Site;
 
 /**
  * Each test in its own process: see CargoTestCase.
@@ -182,6 +185,7 @@ class CargoTest extends CargoTestCase
         $this->assertStringContainsString(' £17.00 sold out]', $html);
         $this->assertStringContainsString('[Linen Shirt choose]', $html);
         $this->assertSame(2, substr_count($html, 'cargo/cart/line-items'));
+        $this->assertSame('ppcp', $this->antlers('{{ wishlist }}{{ items }}{{ if cargo:needs_choice }}c{{ elseif cargo }}p{{ else }}n{{ /if }}{{ /items }}{{ /wishlist }}'));
         $this->assertStringContainsString('name="product" value="'.self::MUG.'"', $html);
     }
 
@@ -201,6 +205,147 @@ class CargoTest extends CargoTestCase
     }
 
     #[Test]
+    public function only_supported_cargo_versions_are_used(): void
+    {
+        $cargo = app(Cargo::class);
+
+        $this->assertTrue($cargo->supported('1.15.0.0'));
+        $this->assertTrue($cargo->supported('1.22.3.0'));
+        $this->assertTrue($cargo->supported('dev-main'));
+        $this->assertFalse($cargo->supported('1.14.3.0'));
+        $this->assertFalse($cargo->supported('2.0.0.0'));
+        $this->assertTrue($cargo->installed());
+    }
+
+    #[Test]
+    public function with_an_unsupported_cargo_saved_variants_stay_on_the_list(): void
+    {
+        $this->wishlists()->add($this->owner, self::SHIRT.'#S');
+
+        $this->app->instance(Cargo::class, new class extends Cargo
+        {
+            public function supported(?string $version = null): bool
+            {
+                return false;
+            }
+        });
+
+        $this->assertSame('1', $this->antlers('{{ wishlist:count }}'));
+        $this->assertSame('', $this->antlers('{{ wishlist:add_to_cart }}<button>Add</button>{{ /wishlist:add_to_cart }}'));
+        $this->assertFalse($this->wishlists()->allowed(self::SHIRT.'#M'));
+    }
+
+    #[Test]
+    public function a_price_saved_without_its_currency_counts_only_with_one_currency(): void
+    {
+        $list = $this->wishlists()->create($this->owner, 'Mine');
+        $list->add(Item::make(self::MUG, ['saved_price' => 1000]));
+        $this->wishlists()->save($list);
+
+        $this->assertTrue($this->row(self::MUG)['cargo']['price_dropped']);
+
+        Site::setSites([
+            'default' => ['name' => 'UK', 'url' => '/', 'locale' => 'en_GB', 'attributes' => ['currency' => 'GBP']],
+            'us' => ['name' => 'US', 'url' => '/us/', 'locale' => 'en_US', 'attributes' => ['currency' => 'USD']],
+        ]);
+
+        $this->assertFalse($this->row(self::MUG)['cargo']['price_dropped']);
+    }
+
+    #[Test]
+    public function an_unusable_cookie_name_falls_back(): void
+    {
+        config(['wishlist.picked_cookie' => 'site.wishlist; path=/']);
+        $this->assertSame('wishlist_picked', Wishlists::pickedCookie());
+
+        config(['wishlist.picked_cookie' => 'shop_two-picked']);
+        $this->assertSame('shop_two-picked', Wishlists::pickedCookie());
+    }
+
+    #[Test]
+    public function what_cant_be_saved_any_more_doesnt_go_in_the_basket(): void
+    {
+        $this->wishlists()->add($this->owner, self::MUG);
+        Entry::find(self::MUG)->published(false)->save();
+
+        $this->postJson('/!/wishlist/cart')->assertOk()->assertJsonPath('cart.added', 0);
+        $this->assertSame(0, Cart::query()->get()->sum(fn ($cart) => $cart->lineItems()->count()));
+    }
+
+    #[Test]
+    public function a_variant_the_product_no_longer_has_drops_off_the_list(): void
+    {
+        $this->wishlists()->add($this->owner, self::SHIRT.'#M');
+        $this->wishlists()->add($this->owner, self::SHIRT.'#S');
+
+        $shirt = Entry::find(self::SHIRT);
+        $variants = $shirt->get('product_variants');
+        $variants['options'] = [$variants['options'][0]];
+        $shirt->set('product_variants', $variants)->save();
+
+        $this->assertSame('1', $this->antlers('{{ wishlist:count }}'));
+        $this->assertSame([self::SHIRT.'#S'], collect(app(Presenter::class)->items($this->wishlists()->find($this->owner)->items()))->pluck('wishlist_item.id')->all());
+    }
+
+    #[Test]
+    public function the_saved_price_stays_the_servers_even_as_an_item_field(): void
+    {
+        config(['wishlist.item_fields' => ['notes', 'quantity', 'saved_price', 'saved_currency']]);
+
+        $this->post('/!/wishlist/items/add', ['id' => self::MUG, 'saved_price' => 99999, 'saved_currency' => 'XXX'])->assertRedirect();
+        $this->post('/!/wishlist/items/add', ['id' => self::MUG, 'saved_price' => 99999])->assertRedirect();
+
+        $data = $this->wishlists()->find($this->owner)->item(self::MUG)->data;
+        $this->assertSame(800, $data['saved_price']);
+        $this->assertSame('GBP', $data['saved_currency']);
+    }
+
+    #[Test]
+    public function a_price_saved_in_another_currency_shows_no_drop(): void
+    {
+        $this->wishlists()->add($this->owner, self::MUG);
+        $list = $this->wishlists()->find($this->owner);
+        $list->add(Item::make(self::MUG, ['saved_price' => 2000, 'saved_currency' => 'USD']));
+        $this->wishlists()->save($list);
+
+        $row = $this->row(self::MUG);
+        $this->assertNull($row['cargo']['saved_price']);
+        $this->assertFalse($row['cargo']['price_dropped']);
+    }
+
+    #[Test]
+    public function with_the_browser_driver_quantities_come_with_the_form(): void
+    {
+        config(['wishlist.driver' => 'browser']);
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        $items = json_encode([['id' => self::MUG, 'data' => ['quantity' => 3]], ['id' => self::SHIRT.'#S', 'data' => ['quantity' => 'lots']], ['id' => 'nope']]);
+
+        $this->postJson('/!/wishlist/cart', ['items' => $items])->assertOk()->assertJsonPath('cart.added', 2);
+
+        $lines = Cart::query()->get()->sole()->lineItems()->map(fn ($line) => [$line->product()->id(), $line->quantity()])->values()->all();
+        $this->assertSame([[self::MUG, 3], [self::SHIRT, 1]], $lines);
+    }
+
+    #[Test]
+    public function the_basket_form_uses_the_picked_list(): void
+    {
+        $this->wishlists()->add($this->owner, self::SHIRT.'#S');
+        $other = $this->wishlists()->create($this->owner, 'Other');
+        $this->wishlists()->add($this->owner, self::MUG, $other->id());
+
+        $this->assertStringNotContainsString('name="list"', $this->antlers('{{ wishlist:add_to_cart }}<button>Add</button>{{ /wishlist:add_to_cart }}'));
+
+        $this->withCredentials()
+            ->withUnencryptedCookie(Wishlists::pickedCookie(), $other->id())
+            ->postJson('/!/wishlist/cart')
+            ->assertOk()
+            ->assertJsonPath('cart.added', 1);
+
+        $this->assertSame([self::MUG], Cart::query()->get()->sole()->lineItems()->map(fn ($line) => $line->product()->id())->values()->all());
+    }
+
+    #[Test]
     public function the_list_goes_in_the_basket_without_whats_out_of_stock_or_unchosen(): void
     {
         $this->wishlists()->add($this->owner, self::SHIRT.'#S', null, ['quantity' => 2]);
@@ -211,7 +356,7 @@ class CargoTest extends CargoTestCase
         $this->postJson('/!/wishlist/cart')
             ->assertOk()
             ->assertJsonPath('cart.added', 2)
-            ->assertJsonPath('message', 'Added 2 to your basket. 2 couldn’t be added: out of stock, or a size, option or amount still to choose.');
+            ->assertJsonPath('message', 'Added 2 to your basket. 2 couldn’t be added: out of stock, no longer available, or with a size, option or amount still to choose.');
 
         // The basket the request made: the only one there is.
         $cart = Cart::query()->get()->sole();

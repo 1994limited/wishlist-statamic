@@ -23,7 +23,7 @@ Keep lists in **flat files**, in the **database**, or only in **the visitor's ow
 | --- | --- | --- |
 | ![The saved books page](docs/images/wishlist.png) | ![A shared list](docs/images/shared.png) | ![Content → Wishlists](docs/images/cp-wishlists.png) |
 
-The screenshots are from Dog-ear Books, a made-up shop built only with the tags and attributes in [the docs](docs/README.md). **[Try the demo](https://github.com/1994limited/wishlist-statamic-demo)**: it runs locally in a few commands, with no licence needed. See [The demo shop](docs/demo.md).
+The screenshots are from Dog-ear Books, a made-up shop built only with the tags and attributes in [the docs](docs/README.md). **[Try the demo](https://github.com/1994limited/wishlist-statamic-demo)**: it runs locally in a few commands, with no licence needed. See [The demo shop](docs/demo.md). For a shop built with Cargo, **[try Dog-ear Books with Cargo](https://github.com/1994limited/wishlist-cargo-demo)**: the same shop with the books for sale, in hardback and paperback.
 
 ## Requirements
 

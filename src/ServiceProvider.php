@@ -94,7 +94,7 @@ class ServiceProvider extends AddonServiceProvider
     public function bootAddon(): void
     {
         // Set by the script, so not encrypted.
-        EncryptCookies::except(Wishlists::PICKED_COOKIE);
+        EncryptCookies::except(Wishlists::pickedCookie());
 
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'wishlist');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'wishlist');

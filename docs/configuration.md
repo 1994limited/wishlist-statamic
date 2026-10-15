@@ -27,8 +27,9 @@ and edit `config/wishlist.php`.
 | `guest_cookie` | `wishlist_guest` | The cookie's name. |
 | `guest_cookie_minutes` | one year | How long the cookie lasts. |
 | `merge_on_login` | `true` | When a guest signs in, move their lists to their account. |
+| `picked_cookie` | `wishlist_picked` | The session cookie the script keeps the visitor's picked list in, so pages arrive showing it. Give each site its own name if several share a domain. Used with every driver. |
 
-These don't apply to the browser driver, where lists belong to whoever is using the browser. See [Guests and signing in](guests.md).
+The others don't apply to the browser driver, where lists belong to whoever is using the browser. See [Guests and signing in](guests.md).
 
 ## What can be saved
 
@@ -36,7 +37,7 @@ These don't apply to the browser driver, where lists belong to whoever is using 
 | --- | --- | --- |
 | `collections` | `null` | Collection handles whose entries can be saved, such as `['products']`. `null` allows entries in any collection that has a route, so every saved entry has a page. Name a collection to allow its entries even without a route. |
 | `taxonomies` | `[]` | Taxonomy handles whose terms can be saved. None by default. |
-| `item_fields` | `['notes', 'quantity']` | Values a visitor can keep with an item. Anything else sent with an item is dropped. |
+| `item_fields` | `['notes', 'quantity']` | Values a visitor can keep with an item. Anything else sent with an item is dropped. With [Cargo](cargo.md), the server also keeps `saved_price` and `saved_currency` with products; those can't be item fields, so visitors can't set them. |
 | `limits.lists` | `20` | The most lists one visitor can keep. |
 | `limits.items` | `500` | The most items one list can hold. |
 | `throttle` | `60,1` | How many changes (saves, new lists…) one visitor can make: attempts, then minutes, as for Laravel's `throttle` middleware. Over the limit they get a 429 until it resets. Reading lists isn't limited. `null` turns it off. |
@@ -47,7 +48,9 @@ Only what a visitor could open on the site can be saved:
 - **Published entries.** In a dated collection that hides future or past entries, scheduled and expired entries count as unpublished, as they 404 on the site.
 - **Not protected.** Entries and terms with Statamic's [`protect`](https://statamic.dev/protecting-content) set can't be saved, so their titles can't be read through a list, a share link or `/!/wishlist/resolve`. Statamic's site-wide `protect.default` isn't taken into account.
 
-Anything that couldn't be saved now drops out of lists when they're shown: entries unpublished, expired, protected or deleted since, and entries or terms whose collection or taxonomy is no longer allowed.
+Anything that couldn't be saved now drops out of lists when they're shown: entries unpublished, expired, protected or deleted since, entries or terms whose collection or taxonomy is no longer allowed, and [Cargo variants](cargo.md#variants) a product no longer has.
+
+With Cargo, products are saved like other entries, so their collection must be allowed here too (with `collections` left as `null`, Cargo's product collections need a route).
 
 Item fields are kept as plain text up to 1,000 characters, with whole HTML tags removed (a lone `<`, as in "I <3 this", stays). They're escaped wherever they're printed. `quantity` is kept as a whole number from 1 to 9,999. Any name you add to `item_fields` is kept as text.
 

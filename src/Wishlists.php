@@ -28,9 +28,23 @@ class Wishlists
     /**
      * The cookie the script keeps the picked list in, so the server can
      * draw it. A list ID, not a secret: it's only used if it's one of the
-     * visitor's own lists.
+     * visitor's own lists. Named by `picked_cookie` in the config.
      */
-    public const PICKED_COOKIE = 'wishlist_picked';
+    public static function pickedCookie(): string
+    {
+        $name = config('wishlist.picked_cookie', 'wishlist_picked');
+
+        // Letters, digits, - and _ only, so the script can find it as named.
+        return is_string($name) && preg_match('/^[A-Za-z0-9_-]+$/', $name) ? $name : 'wishlist_picked';
+    }
+
+    /**
+     * The visitor's picked list (from the cookie), if it's one of theirs.
+     */
+    public function picked(Owner $owner, mixed $listId): ?Wishlist
+    {
+        return is_string($listId) && $listId !== '' ? $this->find($owner, substr($listId, 0, 64)) : null;
+    }
 
     /** @var array<string, Collection<int, Wishlist>> */
     protected array $memo = [];
@@ -347,6 +361,8 @@ class Wishlists
     {
         return collect($data)
             ->only((array) config('wishlist.item_fields', []))
+            // Set by the server alone (see savedPrice()), even if listed.
+            ->except(['saved_price', 'saved_currency'])
             ->filter(fn ($value) => is_scalar($value) && $value !== '')
             ->map(fn ($value, $key) => $key === 'quantity'
                 ? max(1, min(9999, (int) $value))
@@ -366,7 +382,9 @@ class Wishlists
 
         $price = app(Cargo::class)->price($reference);
 
-        return $price === null ? [] : ['saved_price' => $price];
+        // With the currency, so a multisite shop doesn't compare a price in
+        // one currency with another's.
+        return $price === null ? [] : array_filter(['saved_price' => $price, 'saved_currency' => app(Cargo::class)->currency()]);
     }
 
     public function save(Wishlist $list): void

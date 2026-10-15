@@ -100,7 +100,8 @@ Whether an entry is on a list. Alias: `{{ wishlist:in_list }}`.
 | Parameter | |
 | --- | --- |
 | `id` (or `entry`) | The entry's ID. |
-| `list` | A list's ID, `any` for any of the visitor's lists, or leave it out for the default list. |
+| `variant` | With [Cargo](cargo.md#variants), a variant's key: the item is then `id#key`. `id` can also be the joined ID. |
+| `list` | A list's ID, `any` for any of the visitor's lists, or leave it out for the default list (or, inside a drawn list, that list). |
 
 ```antlers
 {{ if {wishlist:has id="{{ id }}"} }}♥{{ /if }}
@@ -121,7 +122,7 @@ How many items are on a list: the default, `list="id"`, or `list="all"` for all 
 
 ### `{{ wishlist:share_url }}`
 
-A list's share link: the default list, or `list="id"`. With the browser driver, use `data-wishlist-share` instead (see [JavaScript](javascript.md)).
+A list's share link: `list="id"`, or else the list picked in a `data-wishlist-lists` picker (file and database drivers), or else the default list. With the browser driver, use `data-wishlist-share` instead (see [JavaScript](javascript.md)).
 
 ### `{{ wishlist:encoded }}`
 
@@ -129,7 +130,7 @@ A server driver list's items packed as a browser-style share parameter, for buil
 
 ## Changing lists
 
-Each of these renders a `<form>` that posts to the matching [action](http-api.md). With the script on the page it's sent with `fetch()` and the page updates in place; without it, the page reloads. Put your inputs and button between the tags.
+Each of these renders a `<form>` that posts to the matching [action](http-api.md). With the script on the page it's sent with `fetch()` and the page updates in place; without it, the page reloads. Put your inputs and button between the tags. (`{{ wishlist:add_to_cart }}`, below, is the exception: it always posts as a plain form.)
 
 They all take:
 
@@ -147,9 +148,10 @@ Save or unsave an entry.
 | Parameter | |
 | --- | --- |
 | `id` (or `entry`) | The entry's ID. |
-| `list` | A list's ID. Default list if left out. |
+| `variant` | With [Cargo](cargo.md#variants), a variant's key. |
+| `list` | A list's ID. If left out: inside a drawn list (a `{{ wishlist:render }}` partial, `{{ wishlist:lists }}`), that list; otherwise the default. |
 
-Inside the tag, `{{ added }}` (or `{{ in_list }}`) says whether the entry is on the list when the page is rendered. Inputs named after [item fields](configuration.md#what-can-be-saved) are saved with the item:
+Inside the tag, `{{ added }}` (or `{{ in_list }}`) says whether the entry is on the list when the page is rendered. Inputs named after [item fields](configuration.md#what-can-be-saved) are saved with the item. A field named `variant` chooses a [Cargo variant](cargo.md#variants), and one named `list` chooses the list ([Several lists](templates.md#5-several-lists)):
 
 ```antlers
 {{ wishlist:add id="{{ id }}" }}
@@ -174,7 +176,7 @@ Inside the tag, `{{ added }}` (or `{{ in_list }}`) says whether the entry is on 
 
 ### `{{ wishlist:toggle_attrs }}`
 
-Attributes for a button of your own, which the script makes save and unsave the entry: `data-wishlist-toggle`, `data-wishlist-list` and `aria-pressed`.
+Attributes for a button of your own, which the script makes save and unsave the entry: `data-wishlist-toggle` and `data-wishlist-list`, plus `aria-pressed` and `data-wishlist-active` with the file and database drivers (with the browser driver the script adds them).
 
 ```antlers
 <button class="heart" {{ wishlist:toggle_attrs id="{{ id }}" }}>♥</button>
@@ -189,7 +191,7 @@ Attributes for a button of your own, which the script makes save and unsave the 
 
 </details>
 
-Takes `id` (or `entry`) and `list`. Needs the script.
+Takes `id` (or `entry`), `variant` and `list`, as above. In a list partial, use `:id="wishlist_item:id"` for a Remove button: it includes any variant. Needs the script.
 
 ### `{{ wishlist:create_list }}`
 
@@ -209,6 +211,15 @@ Act on one list:
 ### `{{ wishlist:reset_share_link }}`
 
 Gives a list a new share link. Links already sent stop working. File and database drivers only: a browser driver link carries the items themselves, so there's nothing to reset.
+
+### `{{ wishlist:add_to_cart }}`
+
+With [Cargo](cargo.md#adding-a-whole-list-to-the-basket): a form that puts a list's products in the visitor's basket. It always posts as a plain form, and comes back with a message. Without Cargo it renders nothing.
+
+| Parameter | |
+| --- | --- |
+| `list` | A list's ID. If left out, the list picked in a `data-wishlist-lists` picker, or the default. Unlike the list forms, it doesn't take the list of a `{{ wishlist:lists }}` loop by itself: pass `list="{{ id }}"` there. |
+| `redirect`, `error_redirect` | As above, for example `redirect="/checkout"`. |
 
 ### `{{ wishlist:import }}`
 

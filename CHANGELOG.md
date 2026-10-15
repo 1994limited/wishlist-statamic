@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.2.1 (unreleased)
+
+### Fixed
+- **Remove buttons remove from the list they're on.** Item buttons and forms inside a drawn list (a `{{ wishlist:render }}` partial, `{{ wishlist:lists }}`) now act on that list when given no `list`. Before, with another list picked, Remove acted on the default list instead. Blade partials pass `->param('list', $wishlist_list_id ?? null)`, as `Statamic::tag()` doesn't see the partial's variables.
+- **Only supported Cargo versions are used.** Composer won't install Wishlist alongside Cargo older than 1.15, and a Cargo outside 1.15–1.x is left alone rather than failing.
+- **Adding a list to the basket skips what can't be saved any more** (unpublished, protected, or a variant the product no longer has), and expected refusals (out of stock) are no longer logged as errors.
+- **The browser driver sends quantities** with "add this list to my basket", so they're kept as with the other drivers.
+- **The basket form follows the picker** when it changes on the page, not only the list picked when the page loaded.
+- **Variants a product no longer has drop off lists** and counts.
+- **Saved prices are kept with their currency**, so a multisite shop doesn't compare prices in different currencies. `saved_price` and `saved_currency` can't be set by visitors, even if listed in `item_fields`.
+- **A malformed `wishlist_picked` cookie is ignored** instead of stopping the script. Its name can be changed with `picked_cookie`.
+
+### Docs
+- Corrected and filled in the Cargo, tags, JavaScript, HTTP API, PHP API, configuration, cookie and troubleshooting docs, and fixed the list partial examples to remove by `wishlist_item:id`.
+
 ## 1.2.0 (2026-10-15)
 
 ### Added

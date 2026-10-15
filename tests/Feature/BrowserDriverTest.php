@@ -92,6 +92,24 @@ class BrowserDriverTest extends TestCase
     }
 
     #[Test]
+    public function buttons_in_a_drawn_list_act_on_that_list(): void
+    {
+        file_put_contents(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html', '{{ items }}<button {{ wishlist:toggle_attrs :id="wishlist_item:id" }}>Remove</button>{{ /items }}');
+
+        try {
+            $html = $this->postJson('/!/wishlist/render', [
+                'view' => Crypt::encryptString('partials/saved'),
+                'list' => 'birthday-list" onclick="x',
+                'items' => [['id' => self::A]],
+            ])->assertOk()->getContent();
+
+            $this->assertStringContainsString('data-wishlist-toggle="'.self::A.'" data-wishlist-list="birthday-list&quot; onclick=&quot;x"', $html);
+        } finally {
+            unlink(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html');
+        }
+    }
+
+    #[Test]
     public function posted_items_are_drawn_with_their_notes_held_to_the_saving_rules(): void
     {
         file_put_contents(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html', '{{ title }}|{{ items }}[{{ title }}:{{ wishlist_item:notes }}:{{ wishlist_item:quantity }}:{{ wishlist_item:price }}]{{ /items }}');

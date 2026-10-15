@@ -8,18 +8,18 @@ Most sites need no JavaScript of their own: the attributes below cover buttons, 
 
 | Attribute | What the script does |
 | --- | --- |
-| `form[data-wishlist-form]` | The forms the tags render. Sends them with `fetch()`, sets `aria-busy` while sending, and `data-wishlist-error="…"` if it fails. Make and rename forms are cleared afterwards. |
+| `form[data-wishlist-form]` | The forms the tags render. Sends them with `fetch()`, sets `aria-busy` while sending, and `data-wishlist-error="…"` if it fails. Make and rename forms are cleared afterwards. A `variant` field ([Cargo](cargo.md#variants)) is joined to the item's ID, and the form's added state follows it. `{{ wishlist:add_to_cart }}`'s form (`data-wishlist-form="cart"`) isn't sent with `fetch()`: it posts as a plain form, after the script adds the picked list (and, with the browser driver, the list's items). |
 | `data-wishlist-toggle="id"` | Clicking saves or unsaves the entry. `aria-pressed` and `data-wishlist-active` follow its state. Add `data-wishlist-list="id"` for a list other than the default. |
 | `data-wishlist-when="added"` / `"not-added"` | Inside a toggle button or form: shown only in that state. |
 | `data-wishlist-count` | Text set to the number of items: on the default list, on `="list id"`, or on all lists with `="all"`. |
-| `select[data-wishlist-lists]` | Filled with the visitor's lists. Picks which list is drawn, shared and acted on by list forms that don't name one. A new list is picked as it's made, and the pick is remembered for the visit. Named `list` inside a save form, it chooses the list that form saves to. |
+| `select[data-wishlist-lists]` | Filled with the visitor's lists. Picks which list is drawn, shared and acted on by list forms that don't name one. A new list is picked as it's made, and the pick is remembered for the visit (in the `wishlist_picked` cookie, so the server can draw it too). Named `list` inside a save form, it chooses the list that form saves to, and picks that list for the page as any picker does. |
 | `data-wishlist-share` | A link's `href`, an input's value, or the element's text, set to the share link of the picked list (or `="list id"`). |
 | `data-wishlist-copy-share` | Copies the share link (the picked list, or `="list id"`). Disabled while there's no list to share. Gets `data-wishlist-copied` for two seconds afterwards. If the browser won't copy, it gets `data-wishlist-copy-failed` and the `data-wishlist-share` input is selected, so the visitor can copy it themselves. |
 | `data-wishlist-native-share` | Opens the device's share sheet (Messages, WhatsApp, Mail…) with the picked list's title and link (or `="list id"`). `data-wishlist-share-text="…"` adds a message; `:title` in it becomes the list's title. Where there's no share sheet (most desktop browsers, and any http page) it copies the link instead, as `data-wishlist-copy-share` does. Disabled while there's no list to share. |
 | `html[data-wishlist-can-share]` | `"true"` or `"false"`: whether this device has a share sheet here. Use it to show a Share button only where it opens one. |
 | `data-wishlist-render` | Rendered by `{{ wishlist:render }}`. Drawn again when its list changes. |
 
-Elements added to the page later (by your own scripts, say) work too: clicks and submits are handled at the document. Their state is filled in at the next change, or straight away if you call `Wishlist.pick(Wishlist.picked())`.
+Elements added to the page later (by your own scripts, say) work too: clicks and submits are handled at the document. Their state is filled in at the next change, or straight away if you call `Wishlist.reload()`.
 
 ## `window.Wishlist`
 
@@ -31,7 +31,7 @@ await Wishlist.ready;
 // Reading (synchronous, from what the script already has)
 Wishlist.lists();                 // [{ id, title, default, items: [{ id, added_at, data }], share_url }]
 Wishlist.list(listId);            // one list; the default without an ID
-Wishlist.has(entryId, listId);    // listId optional; 'any' for any list
+Wishlist.has(entryId, listId);    // listId optional; 'any' for any list. A Cargo variant is 'entry-id#key'
 Wishlist.count(listId);           // listId optional; 'all' for every list
 Wishlist.shareUrl(listId);        // the share link
 Wishlist.canShare();              // whether the device has a share sheet here
@@ -48,7 +48,7 @@ await Wishlist.deleteList(listId);
 await Wishlist.makeDefault(listId);
 await Wishlist.resetShareLink(listId);              // server drivers
 await Wishlist.import(['id1', 'id2'], listId);       // or an encoded string from a share link
-Wishlist.pick(listId);                               // pick a list, as the select does
+Wishlist.pick(listId);                               // pick a list, as the select does (and remember it for the visit)
 
 // Asking the server about entries
 await Wishlist.resolve(['id1', 'id2']);   // [{ id, title, url }]: the fields in resolve_fields

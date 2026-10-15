@@ -96,7 +96,7 @@ class WishlistTags extends Tags
         $owner = $this->currentOwner();
         $id = $this->reference();
 
-        return $owner !== null && $id !== '' && $this->wishlists()->has($owner, $id, $this->params->get('list'));
+        return $owner !== null && $id !== '' && $this->wishlists()->has($owner, $id, $this->itemList());
     }
 
     public function inList(): bool
@@ -191,7 +191,7 @@ class WishlistTags extends Tags
     public function toggleAttrs(): string
     {
         $id = $this->reference();
-        $list = $this->params->get('list');
+        $list = $this->itemList();
 
         return collect([
             'data-wishlist-toggle' => $id,
@@ -292,7 +292,7 @@ class WishlistTags extends Tags
             'endpoint' => url('!/wishlist'),
             'shareUrl' => config('wishlist.share.enabled', true) ? url(trim(config('wishlist.share.route', 'wishlist/shared'), '/')) : null,
             'storageKey' => config('wishlist.drivers.browser.storage_key', 'statamic.wishlist'),
-            'pickedCookie' => Wishlists::PICKED_COOKIE,
+            'pickedCookie' => Wishlists::pickedCookie(),
             'defaultTitle' => config('wishlist.default_list_title', 'My Wishlist'),
             'limits' => config('wishlist.limits'),
             'itemFields' => array_values((array) config('wishlist.item_fields', [])),
@@ -328,7 +328,7 @@ class WishlistTags extends Tags
 
         return $this->form("items/{$action}", array_filter([
             'id' => $id,
-            'list' => $this->params->get('list'),
+            'list' => $this->itemList(),
         ]), array_filter([
             'data-wishlist-form' => $action,
             'data-wishlist-id' => $id,
@@ -352,6 +352,18 @@ class WishlistTags extends Tags
             'data-wishlist-active' => $added ? 'true' : 'false',
             'aria-pressed' => $added ? 'true' : 'false',
         ];
+    }
+
+    /**
+     * The list an item tag acts on: list="id", or the list it's drawn in
+     * (a {{ wishlist:render }} partial, {{ wishlist:lists }} loop), so a
+     * Remove button removes from the list it's on. Else the default.
+     */
+    protected function itemList(): ?string
+    {
+        $list = $this->params->get('list', $this->context->get('wishlist_list_id'));
+
+        return is_string($list) && $list !== '' ? $list : null;
     }
 
     /**
@@ -414,7 +426,10 @@ class WishlistTags extends Tags
             return '';
         }
 
-        $list = $this->pickedList();
+        // A list named here goes with the form. Otherwise the script sends
+        // the list picked on the page, and without it the server uses the
+        // remembered pick (see ActionsController::cart()).
+        $list = $this->params->get('list') !== null ? $this->findList() : null;
 
         return $this->form('cart', array_filter(['list' => $list?->id()]), ['data-wishlist-form' => 'cart']);
     }
@@ -435,12 +450,9 @@ class WishlistTags extends Tags
     protected function pickedList(): ?Wishlist
     {
         $owner = $this->currentOwner();
-        $picked = request()->cookie(Wishlists::PICKED_COOKIE);
 
-        if ($owner && $this->params->get('list') === null && is_string($picked) && $picked !== '') {
-            if ($list = $this->wishlists()->find($owner, substr($picked, 0, 64))) {
-                return $list;
-            }
+        if ($owner && $this->params->get('list') === null && ($list = $this->wishlists()->picked($owner, request()->cookie(Wishlists::pickedCookie())))) {
+            return $list;
         }
 
         return $this->findList();

@@ -8,7 +8,7 @@ The tags and the script use these endpoints. Use them directly for a headless fr
 - **POSTs need a CSRF token**, in an `X-CSRF-TOKEN` header or a `_token` field. Get one from `GET /!/wishlist/state`.
 - **Send `Accept: application/json`** for JSON answers. Without it, a POST is treated as a plain form: it redirects back (or to `_redirect`), with a message flashed for `{{ wishlist:success }}` or an error for `{{ wishlist:error }}`.
 - Bodies can be JSON or form fields.
-- **With the browser driver**, every POST except `cart` answers `400` "Wishlists are kept in your browser on this site.", and `state` returns no lists.
+- **With the browser driver**, every POST except `render` and `cart` answers `400` "Wishlists are kept in your browser on this site.", and `state` returns no lists.
 
 ## Reading
 
@@ -75,8 +75,8 @@ and on failure a `4xx` with `{ "success": false, "message": "…" }`. The messag
 | Endpoint | Fields | Adds to the answer |
 | --- | --- | --- |
 | `POST items/add` | `id`, `variant`? ([Cargo](cargo.md#variants)), `list`?, item fields (`notes`, `quantity`, or `data[…]`) | `added: true` |
-| `POST items/remove` | `id`, `list`? | `added: false` |
-| `POST items/toggle` | `id`, `list`?, item fields | `added`: whether it's on the list now |
+| `POST items/remove` | `id`, `variant`?, `list`? | `added: false` |
+| `POST items/toggle` | `id`, `variant`?, `list`?, item fields | `added`: whether it's on the list now |
 | `POST lists/create` | `title` | |
 | `POST lists/rename` | `list`?, `title` | |
 | `POST lists/delete` | `list`? | `list` is `null` |
@@ -84,7 +84,7 @@ and on failure a `4xx` with `{ "success": false, "message": "…" }`. The messag
 | `POST lists/default` | `list` | |
 | `POST lists/share` | `list`? | a new `share_url` |
 | `POST lists/import` | `key` (a share key), or `ids[]`, or `i`; `list`? | `imported`: how many were new |
-| `POST cart` | `list`?, or `i` with the browser driver ([Cargo](cargo.md#adding-a-whole-list-to-the-basket) only) | `cart`: `added` (how many) and `skipped` (the item IDs left out) |
+| `POST cart` | `list`? (left out: the visitor's picked list, from the `wishlist_picked` cookie, or the default). With the browser driver, `items` instead: JSON, `[{"id": "…", "data": {"quantity": 2}}]` (or `i`, IDs only). [Cargo](cargo.md#adding-a-whole-list-to-the-basket) only: `404` without it. | `cart`: `added` (how many) and `skipped` (the item IDs left out). With the browser driver the answer is only `success`, `message` and `cart`. |
 
 `list` is a list's ID. Left out, it means the visitor's default list, which `add`, `toggle` and `import` make if the visitor has none yet.
 
@@ -96,7 +96,7 @@ and on failure a `4xx` with `{ "success": false, "message": "…" }`. The messag
 | `401` | Sign in to keep a wishlist. | `guests` is off and nobody is signed in. |
 | `404` | That wishlist could not be found. | The list isn't the visitor's, or doesn't exist. |
 | `419` | | The CSRF token is missing or expired. Fetch `state` again. |
-| `422` | That can't be added to a wishlist. | The entry isn't published, isn't in an allowed collection, or doesn't exist. |
+| `422` | That can't be added to a wishlist. | The entry isn't published, isn't in an allowed collection, or doesn't exist; or a `variant` the product doesn't have (or on something that isn't a Cargo product). |
 | `422` | A wishlist can hold up to 500 items. / You can keep up to 20 wishlists. | A [limit](configuration.md#what-can-be-saved). |
 | `429` | Too Many Attempts. | Over the [rate limit](configuration.md#what-can-be-saved) for changes. |
 

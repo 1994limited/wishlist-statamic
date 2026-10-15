@@ -70,7 +70,8 @@ class Presenter
     /**
      * The items that can still be shown: ones that could still be added
      * (see Wishlists::allows()), so not deleted, unpublished, expired or
-     * protected since, nor in a collection or taxonomy no longer allowed.
+     * protected since, nor in a collection or taxonomy no longer allowed,
+     * nor a Cargo variant the product no longer has.
      * Counts use this too, so they match the list.
      *
      * @param  iterable<Item>  $items
@@ -83,12 +84,23 @@ class Presenter
         foreach ($items as $item) {
             $data = $item->resolve();
 
-            if ($data instanceof Augmentable && $this->wishlists->allows($data)) {
+            if ($data instanceof Augmentable && $this->wishlists->allows($data) && $this->variantStillThere($item, $data)) {
                 $available[] = $item;
             }
         }
 
         return $available;
+    }
+
+    /**
+     * A saved Cargo variant the product still has. Without a supported
+     * Cargo there's nothing to check against, so saved items stay.
+     */
+    protected function variantStillThere(Item $item, mixed $data): bool
+    {
+        $cargo = app(Cargo::class);
+
+        return ! $cargo->installed() || $cargo->variantAllowed($item->reference, $data);
     }
 
     /**

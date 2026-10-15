@@ -112,6 +112,21 @@ class BladeTest extends TestCase
     }
 
     #[Test]
+    public function a_blade_partials_remove_button_acts_on_the_drawn_list(): void
+    {
+        $partial = __DIR__.'/../__fixtures__/views/partials/remove-blade.blade.php';
+        file_put_contents($partial, "@foreach (\$items as \$item)<button {!! Statamic::tag('wishlist:toggle_attrs')->param('id', \$item['wishlist_item']['id'])->param('list', \$wishlist_list_id ?? null)->fetch() !!}>Remove</button>@endforeach");
+
+        try {
+            $html = $this->renderBlade('<s:wishlist:render partial="remove-blade" list="'.$this->gifts->id().'"></s:wishlist:render>');
+
+            $this->assertStringContainsString('data-wishlist-toggle="'.self::B.'" data-wishlist-list="'.$this->gifts->id().'" data-wishlist-active="true"', $html);
+        } finally {
+            unlink($partial);
+        }
+    }
+
+    #[Test]
     public function the_shared_page_sits_in_a_blade_layout(): void
     {
         config(['wishlist.share.layout' => 'blade-layout']);

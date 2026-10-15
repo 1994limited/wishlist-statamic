@@ -452,7 +452,12 @@
     // page, and the server draws that list first time.
     var pickedCookie = config.pickedCookie;
     var picked = (document.cookie.match(new RegExp('(?:^|; )' + pickedCookie + '=([^;]*)')) || [])[1] || null;
-    if (picked) picked = decodeURIComponent(picked);
+    try {
+        picked = picked ? decodeURIComponent(picked).slice(0, 64) : null;
+    } catch (e) {
+        // A cookie that isn't ours to read: ignore it.
+        picked = null;
+    }
 
     function pick(listId) {
         picked = listId || null;
@@ -650,6 +655,7 @@
         var body = JSON.stringify({
             view: container.getAttribute('data-wishlist-render'),
             t: l ? l.title : undefined,
+            list: l ? l.id : undefined,
             items: l ? l.items.map(function (i) { return { id: i.id, data: i.data }; }) : [],
         });
 
@@ -739,8 +745,11 @@
             }
             if (config.driver === 'browser') {
                 var l = list(listField ? listField.value : undefined);
-                var field = form.querySelector('input[name="i"]') || form.appendChild(Object.assign(document.createElement('input'), { type: 'hidden', name: 'i' }));
-                field.value = encode(l ? l.items.map(function (i) { return i.id; }) : []);
+                // The items, each with its quantity: all the basket needs.
+                var field = form.querySelector('input[name="items"]') || form.appendChild(Object.assign(document.createElement('input'), { type: 'hidden', name: 'items' }));
+                field.value = JSON.stringify(l ? l.items.map(function (i) {
+                    return { id: i.id, data: i.data && i.data.quantity ? { quantity: i.data.quantity } : {} };
+                }) : []);
             }
             return;
         }

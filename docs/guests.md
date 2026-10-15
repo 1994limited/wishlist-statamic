@@ -1,6 +1,6 @@
 # Guests and signing in
 
-This page is about the file and database drivers. With the [browser driver](drivers.md#browser), lists belong to whoever is using the browser: there are no accounts, cookies or merging.
+This page is about the file and database drivers. With the [browser driver](drivers.md#browser), lists belong to whoever is using the browser: there are no accounts or merging, and no cookie but `wishlist_picked` (below).
 
 ## Who owns a list
 
@@ -27,7 +27,7 @@ Turn merging off with `merge_on_login` set to `false`. The guest's lists then st
 
 - `wishlist_guest` is set only once a visitor saves something, so it's a cookie they asked for. Whether that needs consent depends on where you are: check with whoever looks after your cookie policy.
 - The cookie holds a random ID, encrypted by Laravel, and nothing else.
-- `wishlist_picked` is set only when a visitor picks a list in a list picker, and ends with the browser session. It holds that list's ID, and the server ignores it unless the list is theirs.
+- `wishlist_picked` (with every driver) is set when a visitor picks a list in a list picker or makes a new one, and ends with the browser session. It holds that list's ID, so pages arrive showing that list, and the server ignores it unless the list is theirs. Rename it with `picked_cookie`.
 - Lists hold entry IDs, the item fields you allow (notes and quantity by default), dates and an owner. No names, emails or IP addresses.
 - To keep nothing about visitors on your server, use the [browser driver](drivers.md#browser).
 

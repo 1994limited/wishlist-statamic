@@ -57,6 +57,11 @@ return [
 
     'guest_cookie_minutes' => 60 * 24 * 365,
 
+    // The session cookie the script keeps the visitor's picked list in, so
+    // pages arrive showing it. Give each site its own name if several share
+    // a domain.
+    'picked_cookie' => 'wishlist_picked',
+
     'merge_on_login' => true,
 
     /*

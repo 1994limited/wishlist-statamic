@@ -2,7 +2,7 @@
 
 With [Cargo](https://builtwithcargo.dev) installed, Wishlist knows which entries are products. Lists then show each product's price and stock, keep the price it had when it was saved, save variants (sizes, editions, colours) as separate items, and can put a whole list in the basket.
 
-There's nothing to turn on. Without Cargo, none of this appears and the `variant` parameters and `{{ wishlist:add_to_cart }}` do nothing.
+There's nothing to turn on. Without Cargo, none of this appears: `{{ wishlist:add_to_cart }}` renders nothing, items have no `cargo` values, and an item with a `variant` can't be saved.
 
 ![A saved list with prices, editions, a price drop and Add to basket](images/cargo-list.png)
 
@@ -10,7 +10,7 @@ There's nothing to turn on. Without Cargo, none of this appears and the `variant
 
 ## Requirements
 
-- Cargo 1.15 or later (`duncanmcclean/statamic-cargo`).
+- Cargo 1.15 or a later 1.x release (`duncanmcclean/statamic-cargo`). Composer won't install Wishlist alongside an older Cargo. With a Cargo release outside that range (a future 2.0, say), Wishlist leaves Cargo alone and works as it does without it.
 - Products are the entries in Cargo's product collections (`products.collections` in `config/statamic/cargo.php`). Those collections also need to be ones Wishlist allows (`collections` in `config/wishlist.php`, or `null` for any with a route).
 
 ## Saving products
@@ -52,7 +52,7 @@ Pass `variant` to the tags:
 
 `variant` works on `wishlist:toggle`, `wishlist:add`, `wishlist:remove`, `wishlist:has` and `wishlist:toggle_attrs`. Inside an `{{ product_variants:options }}` loop, `id` is still the product's.
 
-Or let the visitor choose, with a field named `variant` in a `{{ wishlist:add }}` form. The button's added/not-added state follows the choice:
+Or let the visitor choose, with a field named `variant` in a `{{ wishlist:add }}`, `{{ wishlist:toggle }}` or `{{ wishlist:remove }}` form. It works without JavaScript too. With the script, the button's added/not-added state follows the choice (before the script runs, it shows the product without a variant):
 
 ```antlers
 {{ wishlist:add :id="id" }}
@@ -87,7 +87,9 @@ Or let the visitor choose, with a field named `variant` in a `{{ wishlist:add }}
 
 In JavaScript, use the joined ID: `Wishlist.add('product-id#M')`.
 
-A key that isn't one of the product's variants is refused, as is a variant on anything that isn't a product.
+A key that isn't one of the product's variants is refused, as is a variant on anything that isn't a product. (With the [browser driver](drivers.md#browser) the list lives in the browser, so the server can't refuse it, but such an item is never shown or added to the basket.) If a product later loses a variant, items saved with it drop off the list.
+
+Each variant is its own item, so `{{ wishlist:has id="{{ id }}" }}` without a `variant` is false when only variants of the product are saved.
 
 A product with variants can also be saved without one, from a shelf or a card, say. It then shows on the list with `needs_choice`, and links back to its page to choose (see below). It's left out when the list goes in the basket.
 
@@ -108,7 +110,9 @@ Each item on a list has the entry's own fields, `wishlist_item` (see [Tags](tags
 | `cargo:price_drop_formatted` / `cargo:price_drop` | By how much. |
 | `cargo:product` | The product's ID, for Cargo's `{{ cart:add }}`. |
 
-Use `{{ wishlist_item:id }}`, not `{{ id }}`, to remove an item: it includes the variant.
+`cargo` is there only for products: other entries and terms on the same list don't have it, so check for it before showing a price.
+
+Use `{{ wishlist_item:id }}`, not `{{ id }}`, to remove an item: it includes the variant. Buttons in a drawn list act on that list, so Remove takes the item off the list on show.
 
 A list partial for `{{ wishlist:render }}`, with an "Add to basket" button on each product:
 
@@ -124,7 +128,7 @@ A list partial for `{{ wishlist:render }}`, with an "Add to basket" button on ea
 
         {{ if cargo:needs_choice }}
             <a href="{{ url }}">Choose a size</a>
-        {{ else }}
+        {{ elseif cargo }}
             {{ cargo:price_formatted }}
             {{ if cargo:in_stock }}
                 {{ cart:add }}
@@ -171,7 +175,7 @@ A list partial for `{{ wishlist:render }}`, with an "Add to basket" button on ea
             @endif
         @endif
 
-        <button {!! Statamic::tag('wishlist:toggle_attrs')->param('id', $item['wishlist_item']['id'])->fetch() !!}>Remove</button>
+        <button {!! Statamic::tag('wishlist:toggle_attrs')->param('id', $item['wishlist_item']['id'])->param('list', $wishlist_list_id ?? null)->fetch() !!}>Remove</button>
     </li>
 @endforeach
 ```
@@ -182,7 +186,9 @@ A list partial for `{{ wishlist:render }}`, with an "Add to basket" button on ea
 
 ### Price drops
 
-The price is kept when an item is saved, by the server, from the product itself: visitors can't set it. Items saved before Cargo was installed, and items saved without a variant, have no saved price, so `price_dropped` stays false for them. With the browser driver, a shared link carries only the items, not their saved prices.
+The price is kept when an item is saved, by the server, from the product itself, with the site's currency: visitors can't set it. Items saved before Cargo was installed, products with variants saved without choosing one, and vouchers of any amount have no saved price, so `price_dropped` stays false for them. On a multisite shop, a price saved in one currency isn't compared with another's.
+
+The browser driver doesn't keep saved prices (the list is in the visitor's browser, where they could change it), so price drops show only with the file and database drivers.
 
 ## Adding a whole list to the basket
 
@@ -203,9 +209,9 @@ The price is kept when an item is saved, by the server, from the product itself:
 
 </details>
 
-It puts every product on the list in the visitor's Cargo basket, with Cargo's own rules, one of each (or the item's `quantity`, if one was saved). Products that are sold out, or still need a variant or an amount chosen, stay on the list, and the message says how many couldn't be added. Nothing is taken off the list.
+It puts every product on the list in the visitor's Cargo basket, with Cargo's own rules (stock, products needed first), one of each, or the item's `quantity` if one was saved. Products that are sold out, no longer available (unpublished, say), or still need a variant or an amount chosen stay on the list, and the message says how many couldn't be added. Entries that aren't products are skipped too. Nothing is taken off the list.
 
-Without a `list` parameter, it acts on the list picked in a `data-wishlist-lists` picker, or the default list. Pass `list="{{ id }}"` inside `{{ wishlist:lists }}` for one per list. It works with every driver: with the browser driver, the script sends the list's items along with the form.
+Without a `list` parameter, it acts on the list picked in a `data-wishlist-lists` picker (as it is when the button is pressed), or the default list. Pass `list="{{ id }}"` inside `{{ wishlist:lists }}` for one per list. It works with every driver. With the browser driver, the script sends the list's items, with their quantities, along with the form, so it needs JavaScript.
 
 The form posts to `/!/wishlist/cart` and comes back to the page with a message ([`{{ wishlist:success }}`](templates.md#7-messages-and-errors)). Pass `redirect="/checkout"` to go straight to the basket instead. To change the wording, override `cart_all` and `cart_some` in the [messages file](configuration.md#translations).
 

@@ -37,6 +37,11 @@ class TagsTest extends TestCase
         $this->wishlists()->save($this->gifts);
     }
 
+    protected function owner(): Owner
+    {
+        return Owner::user(auth()->user());
+    }
+
     #[Test]
     public function the_default_list_and_its_items(): void
     {
@@ -44,6 +49,12 @@ class TagsTest extends TestCase
             'My Wishlist (1): Linen Shirt /products/linen-shirt Size M;',
             $this->antlers('{{ wishlist }}{{ title }} ({{ count }}): {{ items }}{{ title }} {{ url }} {{ wishlist_item:notes }};{{ /items }}{{ /wishlist }}'),
         );
+    }
+
+    #[Test]
+    public function entries_that_arent_products_have_no_cargo_values(): void
+    {
+        $this->assertSame('n', $this->antlers('{{ wishlist }}{{ items }}{{ if cargo:needs_choice }}c{{ elseif cargo }}p{{ else }}n{{ /if }}{{ /items }}{{ /wishlist }}'));
     }
 
     #[Test]
@@ -197,12 +208,33 @@ class TagsTest extends TestCase
     }
 
     #[Test]
+    public function buttons_in_a_drawn_list_act_on_that_list(): void
+    {
+        file_put_contents(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html', '{{ items }}<button {{ wishlist:toggle_attrs :id="wishlist_item:id" }}>Remove</button>{{ /items }}');
+
+        try {
+            $html = $this->antlers('{{ wishlist:render partial="saved" list="'.$this->gifts->id().'" }}');
+            $this->assertStringContainsString('data-wishlist-toggle="'.self::B.'" data-wishlist-list="'.$this->gifts->id().'" data-wishlist-active="true"', $html);
+
+            // And posting it removes it from that list, not the default.
+            $this->post('/!/wishlist/items/toggle', ['id' => self::A, 'list' => $this->gifts->id()]);
+            $this->assertFalse($this->wishlists()->has($this->owner(), self::A, $this->gifts->id()));
+            $this->assertTrue($this->wishlists()->has($this->owner(), self::A));
+        } finally {
+            unlink(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html');
+        }
+
+        // The forms in a {{ wishlist:lists }} loop act on each list.
+        $this->assertStringContainsString('name="list" value="'.$this->gifts->id().'"', $this->antlers('{{ wishlist:lists }}{{ wishlist:remove id="'.self::B.'" }}{{ /wishlist:remove }}{{ /wishlist:lists }}'));
+    }
+
+    #[Test]
     public function the_picked_list_is_drawn_and_shared_first_time(): void
     {
         file_put_contents(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html', '{{ title }}');
 
         try {
-            request()->cookies->set(Wishlists::PICKED_COOKIE, $this->gifts->id());
+            request()->cookies->set(Wishlists::pickedCookie(), $this->gifts->id());
 
             $this->assertStringContainsString('>Gifts</div>', $this->antlers('{{ wishlist:render partial="saved" }}'));
             $this->assertSame('http://localhost/wishlist/shared/'.$this->gifts->shareKey(), $this->antlers('{{ wishlist:share_url }}'));
@@ -216,7 +248,7 @@ class TagsTest extends TestCase
             // Someone else's list, or one that's gone, is ignored.
             $other = Wishlist::make(Owner::user($this->user('other@example.com')), 'Theirs');
             $this->wishlists()->save($other);
-            request()->cookies->set(Wishlists::PICKED_COOKIE, $other->id());
+            request()->cookies->set(Wishlists::pickedCookie(), $other->id());
             $this->assertStringContainsString('>My Wishlist</div>', $this->antlers('{{ wishlist:render partial="saved" }}'));
         } finally {
             unlink(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html');

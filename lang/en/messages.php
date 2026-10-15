@@ -4,7 +4,7 @@ return [
     'added' => 'Added to :list.',
     'removed' => 'Removed from :list.',
     'cart_all' => '{0} Nothing on this list could go in your basket.|{1} Added 1 item to your basket.|[2,*] Added :count items to your basket.',
-    'cart_some' => 'Added :count to your basket. :skipped couldn’t be added: out of stock, or a size, option or amount still to choose.',
+    'cart_some' => 'Added :count to your basket. :skipped couldn’t be added: out of stock, no longer available, or with a size, option or amount still to choose.',
     'cleared' => ':list is now empty.',
     'created' => 'Made :list.',
     'renamed' => 'Renamed to :list.',

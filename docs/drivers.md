@@ -74,7 +74,7 @@ To use a connection other than the default, set `WISHLIST_DB_CONNECTION`. Table 
 WISHLIST_DRIVER=browser
 ```
 
-Lists are kept in the visitor's `localStorage` under `statamic.wishlist`. Nothing is stored on your server: no cookie, no files, no rows.
+Lists are kept in the visitor's `localStorage` under `statamic.wishlist`. Nothing is stored on your server: no files, no rows, and no cookie except `wishlist_picked`, a session cookie naming the list the visitor last picked.
 
 What that means:
 

@@ -15,9 +15,15 @@
 
 The entry isn't published, isn't in a collection listed in `collections`, or isn't an entry. Terms need their taxonomy listed in `taxonomies`. See [What can be saved](configuration.md#what-can-be-saved).
 
+With a `variant`: it isn't one of the product's variants, the entry isn't a [Cargo](cargo.md) product, or Cargo isn't installed (or is a version Wishlist doesn't support, see [Requirements](cargo.md#requirements)).
+
 ## A list I made doesn't show
 
-New lists are added and picked in a `<select data-wishlist-lists>`. Without one on the page, `{{ wishlist:render }}` and the forms keep showing the default list. Add the picker (see [Several lists](templates.md#5-several-lists)), or loop over `{{ wishlist:lists }}`.
+A new list is picked as it's made, and the pick lasts for the visit, so the drawn list and list forms follow it. To show another list, visitors need a `<select data-wishlist-lists>` to switch with: add one (see [Several lists](templates.md#5-several-lists)), or loop over `{{ wishlist:lists }}`. Saves without a `list` still go to the default list: give the form a `list` picker, or offer `{{ wishlist:make_default }}`.
+
+## "Add to basket" doesn't show
+
+`{{ wishlist:add_to_cart }}` renders only with a supported [Cargo](cargo.md#requirements) installed (1.15 or a later 1.x). Check `composer show duncanmcclean/statamic-cargo`.
 
 ## Tags show nothing (browser driver)
 

@@ -40,6 +40,12 @@
         "orchestra/testbench": "^10.0|^11.0",
         "phpunit/phpunit": "^12.0"
     },
+    "suggest": {
+        "duncanmcclean/statamic-cargo": "Shows prices and stock on lists, saves variants, and adds a list to the basket (Cargo ^1.15)."
+    },
+    "conflict": {
+        "duncanmcclean/statamic-cargo": "<1.15"
+    },
     "extra": {
         "statamic": {
             "name": "Wishlist",

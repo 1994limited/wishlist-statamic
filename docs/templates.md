@@ -10,7 +10,7 @@ Every example is in Antlers, with the Blade version under **Blade**. In Blade:
 
 - **Tags** are written `<s:wishlist:toggle :id="$id">…</s:wishlist:toggle>`, and single ones `<s:wishlist:count />`.
 - **Values you test or loop over yourself** come from `Statamic::tag()`, for example `@if (Statamic::tag('wishlist:has')->param('id', $id)->fetch())`.
-- **Partials** for `wishlist:render` can be `.blade.php` files. They get `$title`, `$count`, `$no_results` and `$items`, each item an array with `title`, `url`, `id` and `wishlist_item` (its notes, quantity and when it was added).
+- **Partials** for `wishlist:render` can be `.blade.php` files. They get `$title`, `$count`, `$no_results`, `$wishlist_list_id` and `$items`, each item an array with `title`, `url`, `id` and `wishlist_item` (its ID, notes, quantity and when it was added), plus `cargo` for [Cargo](cargo.md) products. `Statamic::tag()` doesn't see the partial's variables, so pass `->param('list', $wishlist_list_id ?? null)` to buttons that should act on the list drawn. (`wishlist_list_id` is how buttons know their list, in Antlers too, so don't give a field that handle.)
 - **Visitors' text arrives already escaped**, as it does in Antlers: list titles, notes and other `wishlist_item` fields, and the success and error messages. Print those with `{!! !!}`, or `{{ }}` would escape them twice (`Books &amp;amp; Gifts`). The entry's own fields, like each item's `title` and `url`, aren't escaped by Wishlist, so print them with `{{ }}` as usual. Use `{!! !!}` only for these values, `toggle_attrs`, and `$template_content`.
 - **The shared page** is an Antlers template placed in your layout as `$template_content`. If your layout is Blade and uses `@yield('content')`, either add `{!! $template_content ?? '' !!}` next to it, or point `share.template` at a Blade view of your own (see [The shared page](sharing.md#the-shared-page)).
 
@@ -124,7 +124,7 @@ Make a page (say `/wishlist`) and a partial to draw the list, `resources/views/p
             <li>
                 <a href="{{ url }}">{{ title }}</a>
                 {{ if wishlist_item:notes }}<small>{{ wishlist_item:notes }}</small>{{ /if }}
-                <button {{ wishlist:toggle_attrs id="{{ id }}" }}>Remove</button>
+                <button {{ wishlist:toggle_attrs :id="wishlist_item:id" }}>Remove</button>
             </li>
         {{ /items }}
     </ul>
@@ -146,7 +146,7 @@ Make a page (say `/wishlist`) and a partial to draw the list, `resources/views/p
             <li>
                 <a href="{{ $item['url'] }}">{{ $item['title'] }}</a>
                 @if ($item['wishlist_item']['notes'] ?? null)<small>{!! $item['wishlist_item']['notes'] !!}</small>@endif
-                <button {!! Statamic::tag('wishlist:toggle_attrs')->param('id', $item['id'])->fetch() !!}>Remove</button>
+                <button {!! Statamic::tag('wishlist:toggle_attrs')->param('id', $item['wishlist_item']['id'])->param('list', $wishlist_list_id ?? null)->fetch() !!}>Remove</button>
             </li>
         @endforeach
     </ul>
@@ -248,7 +248,9 @@ Visitors can keep more than one list: "Birthday", "Kitchen ideas". Add a picker,
 
 </details>
 
-The script fills the picker with the visitor's lists. The drawn list, the share link and the rename and delete forms all follow whichever list is picked, and a new list is picked as it's made. The pick is remembered for the rest of the visit, in a `wishlist_picked` cookie, so it's still picked on the next page. With the file and database drivers, `{{ wishlist:render }}` and `{{ wishlist:share_url }}` use it too (unless given a `list`), so the page arrives showing the picked list. Saves and counts without a `list` stay on the default list.
+The script fills the picker with the visitor's lists. The drawn list, the share link, the list forms (rename, delete, clear, make default, reset the share link) and [`{{ wishlist:add_to_cart }}`](cargo.md#adding-a-whole-list-to-the-basket) all follow whichever list is picked, and a new list is picked as it's made. The pick is remembered for the rest of the visit, in a `wishlist_picked` cookie, so it's still picked on the next page. With the file and database drivers, `{{ wishlist:render }}` and `{{ wishlist:share_url }}` use it too (unless given a `list`), so the page arrives showing the picked list.
+
+Save buttons and counts without a `list` stay on the default list, except inside a drawn list: there, buttons act on the list they're drawn in, so a Remove button removes from the list on show.
 
 Save buttons put things on the visitor's **default** list (their first, unless they make another the default). To save to a particular list, pass `list="…"`:
 
@@ -277,7 +279,7 @@ Save buttons put things on the visitor's **default** list (their first, unless t
 
 (`{{ wishlist:lists }}` reads lists on the server, so this needs the file or database driver.)
 
-Or let the visitor choose, with a picker named `list` inside the form. It works with every driver, starts on the picked list, and the button's added state follows it:
+Or let the visitor choose, with a picker named `list` inside the form. It works with every driver, starts on the picked list, and the button's added state follows it. It's a picker like any other, so choosing a list in it picks that list for the page too (the drawn list, the share link, other pickers):
 
 ```antlers
 {{ wishlist:add id="{{ id }}" }}

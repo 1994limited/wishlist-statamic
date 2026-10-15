@@ -107,6 +107,8 @@ class ActionsController
             'no_results' => count($items) === 0,
             // From the link, so anyone could have written it.
             'title' => e($this->linkTitle($request) ?? config('wishlist.default_list_title', 'My Wishlist')),
+            // The browser's own list, so buttons in the partial act on it.
+            'wishlist_list_id' => $request->isMethod('post') ? $this->text($request, 'list', 64) : null,
         ];
     }
 
@@ -193,10 +195,21 @@ class ActionsController
         // The browser driver's list is in the visitor's browser: it sends
         // the items, which are held to the same rules as saving them.
         if (! $this->wishlists->storesOnServer()) {
+            // What's kept with each item (a quantity) comes as JSON in
+            // "items", held to the same rules as saving; the IDs alone in "i".
+            $data = json_decode((string) $this->text($request, 'items', 200000), true);
+            $data = collect(is_array($data) ? $data : [])
+                ->filter(fn ($item) => is_array($item) && is_string($item['id'] ?? null))
+                ->mapWithKeys(fn (array $item) => [$item['id'] => is_array($item['data'] ?? null) ? $item['data'] : []]);
+
+            $references = $data->isNotEmpty()
+                ? $data->keys()->take($this->wishlists->itemLimit())->all()
+                : ShareCodec::decode($this->text($request, 'i', 20000), $this->wishlists->itemLimit());
+
             $list = Wishlist::make(Owner::guest('browser'));
-            collect(ShareCodec::decode($this->text($request, 'i', 20000), $this->wishlists->itemLimit()))
+            collect($references)
                 ->filter(fn (string $reference) => $this->wishlists->allowed($reference))
-                ->each(fn (string $reference) => $list->add(Item::make($reference)));
+                ->each(fn (string $reference) => $list->add(Item::make($reference, $this->wishlists->itemData($data->get($reference, [])))));
 
             $result = app(Cargo::class)->addToCart($list);
 
@@ -206,7 +219,12 @@ class ActionsController
         }
 
         return $this->act($request, function (Owner $owner) use ($request, $message) {
-            $list = $this->wishlists->find($owner, $this->text($request, 'list', 64)) ?? throw WishlistException::listNotFound();
+            $listId = $this->text($request, 'list', 64);
+
+            // No list sent: the one the visitor picked on the page, if theirs.
+            $list = ($listId === null ? $this->wishlists->picked($owner, $request->cookie(Wishlists::pickedCookie())) : null)
+                ?? $this->wishlists->find($owner, $listId)
+                ?? throw WishlistException::listNotFound();
             $result = app(Cargo::class)->addToCart($list);
 
             return [$list, $message($result), ['cart' => $result]];
