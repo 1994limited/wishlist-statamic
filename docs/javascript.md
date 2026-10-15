@@ -14,7 +14,7 @@ Most sites need no JavaScript of their own: the attributes below cover buttons, 
 | `data-wishlist-count` | Text set to the number of items: on the default list, on `="list id"`, or on all lists with `="all"`. |
 | `select[data-wishlist-lists]` | Filled with the visitor's lists. Picks which list is drawn, shared and acted on by list forms that don't name one. A new list is picked as it's made. |
 | `data-wishlist-share` | A link's `href`, an input's value, or the element's text, set to the share link of the picked list (or `="list id"`). |
-| `data-wishlist-copy-share` | Copies the share link (the picked list, or `="list id"`). Gets `data-wishlist-copied` for two seconds afterwards. |
+| `data-wishlist-copy-share` | Copies the share link (the picked list, or `="list id"`). Disabled while there's no list to share. Gets `data-wishlist-copied` for two seconds afterwards. If the browser won't copy, it gets `data-wishlist-copy-failed` and the `data-wishlist-share` input is selected, so the visitor can copy it themselves. |
 | `data-wishlist-render` | Rendered by `{{ wishlist:render }}`. Drawn again when its list changes. |
 
 Elements added to the page later (by your own scripts, say) work too: clicks and submits are handled at the document. Their state is filled in at the next change, or straight away if you call `Wishlist.pick(Wishlist.picked())`.
@@ -76,6 +76,7 @@ On `document`:
 | `wishlist:ready` | `{ lists }` | The script has the visitor's lists. |
 | `wishlist:change` | `{ lists, result }` | Anything changed, here or (browser driver) in another tab. |
 | `wishlist:error` | `{ message }` | A change failed. |
+| `wishlist:copied` | `{ url }` | A share link was copied. |
 
 ```js
 document.addEventListener('wishlist:change', (event) => {

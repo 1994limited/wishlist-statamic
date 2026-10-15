@@ -6,6 +6,11 @@
 - **Check the browser's console and network tab** for requests to `/!/wishlist/…`. A `419` means the CSRF token expired: see below. A `422` means the entry can't be saved: see the next question.
 - **Browser driver and a plain form?** Without the script, forms post to the server, which keeps nothing with this driver and answers `400`.
 
+## The copy button does nothing
+
+- **Is it disabled?** It is until the visitor has a list: there's no link to copy yet.
+- **Is the site on http?** Browsers only allow the modern clipboard on https (and `localhost`). On http, Wishlist falls back to the older way of copying, which some browsers block. If that fails too, the button gets `data-wishlist-copy-failed` and the share link's input is selected, ready to copy by hand.
+
 ## "That can't be added to a wishlist."
 
 The entry isn't published, isn't in a collection listed in `collections`, or isn't an entry. Terms need their taxonomy listed in `taxonomies`. See [What can be saved](configuration.md#what-can-be-saved).

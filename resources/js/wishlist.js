@@ -509,6 +509,13 @@
 
         document.querySelectorAll('select[data-wishlist-lists]').forEach(fillPicker);
 
+        // Nothing to copy until there's a list with a link.
+        document.querySelectorAll('[data-wishlist-copy-share]').forEach(function (el) {
+            var url = shareUrl(el.getAttribute('data-wishlist-copy-share') || pickedList());
+            if ('disabled' in el) el.disabled = !url;
+            el.setAttribute('aria-disabled', url ? 'false' : 'true');
+        });
+
         document.querySelectorAll('[data-wishlist-share]').forEach(function (el) {
             var url = shareUrl(el.getAttribute('data-wishlist-share') || pickedList()) || '';
             if (el.tagName === 'A') el.href = url || '#';
@@ -642,14 +649,61 @@
         if (copy) {
             event.preventDefault();
             var url = shareUrl(copy.getAttribute('data-wishlist-copy-share') || pickedList());
-            if (url && navigator.clipboard) {
-                navigator.clipboard.writeText(url).then(function () {
+            if (!url) return;
+
+            copyText(url).then(
+                function () {
+                    copy.removeAttribute('data-wishlist-copy-failed');
                     copy.setAttribute('data-wishlist-copied', 'true');
                     setTimeout(function () { copy.removeAttribute('data-wishlist-copied'); }, 2000);
-                });
-            }
+                    document.dispatchEvent(new CustomEvent('wishlist:copied', { detail: { url: url } }));
+                },
+                function () {
+                    // Couldn't copy: select the link instead, so the visitor
+                    // can copy it themselves.
+                    copy.setAttribute('data-wishlist-copy-failed', 'true');
+                    var field = document.querySelector('input[data-wishlist-share]');
+                    if (field) {
+                        field.focus();
+                        field.select();
+                    }
+                }
+            );
         }
     });
+
+    // The Clipboard API only exists on secure pages (https, or localhost),
+    // so local and staging sites on http fall back to the older way.
+    function copyText(text) {
+        if (window.isSecureContext && navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text).catch(function () { return legacyCopy(text); });
+        }
+
+        return legacyCopy(text);
+    }
+
+    function legacyCopy(text) {
+        return new Promise(function (resolve, reject) {
+            var area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', '');
+            area.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+            var focused = document.activeElement;
+            document.body.appendChild(area);
+            area.select();
+
+            var copied = false;
+            try {
+                copied = document.execCommand('copy');
+            } catch (e) {
+                copied = false;
+            }
+
+            area.remove();
+            if (focused && focused.focus) focused.focus();
+            copied ? resolve() : reject(new Error('Could not copy.'));
+        });
+    }
 
     // Another tab changed the lists.
     window.addEventListener('storage', function (event) {
