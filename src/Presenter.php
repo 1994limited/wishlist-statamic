@@ -3,7 +3,6 @@
 namespace NineteenNinetyFour\Wishlist;
 
 use Statamic\Contracts\Data\Augmentable;
-use Statamic\Contracts\Entries\Entry;
 use Statamic\Facades\Data;
 
 /**
@@ -11,6 +10,8 @@ use Statamic\Facades\Data;
  */
 class Presenter
 {
+    public function __construct(protected Wishlists $wishlists) {}
+
     /**
      * A list for Antlers: its own values, and items with all of each
      * entry's fields plus a "wishlist_item" with the visitor's values.
@@ -67,8 +68,10 @@ class Presenter
     }
 
     /**
-     * The items that can still be shown: not deleted, and not unpublished,
-     * scheduled or expired since they were added. Counts use this too, so they match the list.
+     * The items that can still be shown: ones that could still be added
+     * (see Wishlists::allows()), so not deleted, unpublished, expired or
+     * protected since, nor in a collection or taxonomy no longer allowed.
+     * Counts use this too, so they match the list.
      *
      * @param  iterable<Item>  $items
      * @return array<int, Item>
@@ -80,7 +83,7 @@ class Presenter
         foreach ($items as $item) {
             $data = $item->resolve();
 
-            if ($data instanceof Augmentable && ! ($data instanceof Entry && $data->status() !== 'published')) {
+            if ($data instanceof Augmentable && $this->wishlists->allows($data)) {
                 $available[] = $item;
             }
         }

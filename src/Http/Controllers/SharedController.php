@@ -47,6 +47,9 @@ class SharedController
 
         $list = $this->wishlists->repository()->findByShareKey($key) ?? abort(404);
         $owner = $this->owner->get();
+        // Only what can still be shown, so the page doesn't carry the IDs of
+        // entries unpublished or protected since.
+        $references = collect($this->presenter->available($list->items()))->map->reference->values();
         $items = $this->presenter->items($list->items());
 
         return [
@@ -56,8 +59,8 @@ class SharedController
             'no_results' => count($items) === 0,
             'is_owner' => $owner !== null && $list->ownedBy($owner),
             'share_key' => $key,
-            'references' => $list->items()->map->reference->values()->all(),
-            'encoded' => ShareCodec::encode($list->items()->map->reference),
+            'references' => $references->all(),
+            'encoded' => ShareCodec::encode($references),
         ];
     }
 

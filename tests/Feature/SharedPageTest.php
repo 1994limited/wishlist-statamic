@@ -98,6 +98,36 @@ class SharedPageTest extends TestCase
     }
 
     #[Test]
+    public function entries_protected_since_are_left_out_ids_and_all(): void
+    {
+        $list = $this->sharedList();
+        Entry::find(self::A)->set('protect', 'logged_in')->save();
+
+        // The import form carries the encoded references: only the one left.
+        $this->get('/wishlist/shared/'.$list->shareKey())
+            ->assertOk()
+            ->assertSee('1 item')
+            ->assertDontSee('Linen Shirt')
+            ->assertSee('value="'.ShareCodec::encode([self::B]).'"', false)
+            ->assertDontSee(ShareCodec::encode([self::A, self::B]), false);
+    }
+
+    #[Test]
+    public function terms_are_left_out_once_their_taxonomy_is_no_longer_allowed(): void
+    {
+        config(['wishlist.taxonomies' => ['tags']]);
+        $term = $this->tag('linen');
+        $list = Wishlist::make(Owner::user('jo'))->setDefault()->add(Item::make($term->id()))->add(Item::make(self::B));
+        $this->wishlists()->save($list);
+
+        $this->get('/wishlist/shared/'.$list->shareKey())->assertSee('2 items');
+
+        config(['wishlist.taxonomies' => []]);
+
+        $this->get('/wishlist/shared/'.$list->shareKey())->assertSee('1 item')->assertDontSee('Linen');
+    }
+
+    #[Test]
     public function an_unknown_key_is_not_found(): void
     {
         $this->get('/wishlist/shared/nope')->assertNotFound();

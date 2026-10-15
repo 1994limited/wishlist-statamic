@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2 (2026-10-15)
+
+### Fixed
+- **Only what has a page can be saved.** With `collections` left as `null`, entries in collections without a route can no longer be saved, so `/!/wishlist/resolve` and share links can't give out their titles. Name a collection in `collections` to allow its entries anyway.
+- **Protected entries and terms are left out.** Anything with Statamic's `protect` set can't be saved and drops out of lists.
+- **Lists show only what could still be added**, so terms drop out once their taxonomy is removed from `taxonomies`, and entries once their collection is removed from `collections`.
+- **A shared page carries only the IDs it shows.** The import form no longer includes items that are no longer available.
+
 ## 1.0.1 (2026-10-15)
 
 ### Fixed

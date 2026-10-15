@@ -10,6 +10,7 @@ use NineteenNinetyFour\Wishlist\Events\ItemAdded;
 use NineteenNinetyFour\Wishlist\Events\ItemRemoved;
 use NineteenNinetyFour\Wishlist\Events\WishlistDeleted;
 use NineteenNinetyFour\Wishlist\Events\WishlistSaved;
+use Statamic\Contracts\Auth\Protect\Protectable;
 use Statamic\Contracts\Entries\Entry;
 use Statamic\Contracts\Taxonomies\Term;
 use Statamic\Facades\Data;
@@ -284,19 +285,34 @@ class Wishlists
     }
 
     /**
-     * Whether a reference may go on a list: a published entry in an allowed
-     * collection, or a term in an allowed taxonomy. Entries a dated
-     * collection hides as scheduled or expired count as unpublished.
+     * Whether a reference may go on a list. See allows().
      */
     public function allowed(string $reference): bool
     {
-        $data = Data::find($reference);
+        return $this->allows(Data::find($reference));
+    }
+
+    /**
+     * Whether data may be on a list: what a visitor could open on the site.
+     * A published entry in an allowed collection, or a term in an allowed
+     * taxonomy. With collections left as null, only entries with a page
+     * count; naming a collection opts its entries in, routed or not.
+     * Scheduled and expired entries count as unpublished, and anything
+     * behind Statamic's protect is left out, so neither can be read by ID.
+     */
+    public function allows(mixed $data): bool
+    {
+        if ($data instanceof Protectable && $data->getProtectionScheme()) {
+            return false;
+        }
 
         if ($data instanceof Entry) {
             $collections = config('wishlist.collections');
 
             return $data->status() === 'published'
-                && ($collections === null || in_array($data->collectionHandle(), (array) $collections, true));
+                && ($collections === null
+                    ? $data->uri() !== null
+                    : in_array($data->collectionHandle(), (array) $collections, true));
         }
 
         if ($data instanceof Term) {

@@ -126,6 +126,28 @@ class ActionsTest extends TestCase
     }
 
     #[Test]
+    public function entries_without_a_page_need_their_collection_named(): void
+    {
+        $this->unrouted('77777777-7777-4777-8777-777777777777', 'Internal');
+        $user = $this->user();
+
+        $this->actingAs($user)->postJson('/!/wishlist/items/add', ['id' => '77777777-7777-4777-8777-777777777777'])->assertStatus(422);
+
+        config(['wishlist.collections' => ['snippets']]);
+
+        $this->actingAs($user)->postJson('/!/wishlist/items/add', ['id' => '77777777-7777-4777-8777-777777777777'])->assertOk();
+    }
+
+    #[Test]
+    public function protected_entries_cannot_be_added(): void
+    {
+        $this->product('88888888-8888-4888-8888-888888888888', 'Members Only')->set('protect', 'logged_in')->save();
+        $user = $this->user();
+
+        $this->actingAs($user)->postJson('/!/wishlist/items/add', ['id' => '88888888-8888-4888-8888-888888888888'])->assertStatus(422);
+    }
+
+    #[Test]
     public function terms_can_be_added_when_their_taxonomy_is_allowed(): void
     {
         $term = $this->tag('linen');
@@ -312,6 +334,18 @@ class ActionsTest extends TestCase
         $this->event('66666666-6666-4666-8666-666666666666', 'Last Year', now()->subYear()->toDateString());
 
         $this->getJson('/!/wishlist/resolve?'.http_build_query(['ids' => ['55555555-5555-4555-8555-555555555555', '66666666-6666-4666-8666-666666666666', self::A]]))
+            ->assertOk()
+            ->assertJsonCount(1, 'items')
+            ->assertJsonPath('items.0.id', self::A);
+    }
+
+    #[Test]
+    public function resolve_leaves_out_entries_without_a_page_and_protected_entries(): void
+    {
+        $this->unrouted('77777777-7777-4777-8777-777777777777', 'Internal');
+        $this->product('88888888-8888-4888-8888-888888888888', 'Members Only')->set('protect', 'password')->save();
+
+        $this->getJson('/!/wishlist/resolve?'.http_build_query(['ids' => ['77777777-7777-4777-8777-777777777777', '88888888-8888-4888-8888-888888888888', self::A]]))
             ->assertOk()
             ->assertJsonCount(1, 'items')
             ->assertJsonPath('items.0.id', self::A);

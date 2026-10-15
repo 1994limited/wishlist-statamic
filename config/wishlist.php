@@ -66,8 +66,9 @@ return [
     |
     | Items are references to Statamic data: entry IDs, or "taxonomy::slug"
     | for terms. Limit them to some collections with "collections" (handles),
-    | or leave it null to allow any entry. Terms are only allowed when
-    | "taxonomies" names their taxonomy.
+    | or leave it null to allow entries in any collection with a route.
+    | Terms are only allowed when "taxonomies" names their taxonomy. Drafts,
+    | scheduled, expired and protected entries are never allowed.
     |
     */
 

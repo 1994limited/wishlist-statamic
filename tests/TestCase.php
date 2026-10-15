@@ -68,6 +68,19 @@ abstract class TestCase extends AddonTestCase
         return $entry;
     }
 
+    /**
+     * An entry in a collection with no route: it has no page on the site.
+     */
+    protected function unrouted(string $id, string $title): \Statamic\Contracts\Entries\Entry
+    {
+        Collection::make('snippets')->save();
+
+        $entry = Entry::make()->collection('snippets')->id($id)->slug(str($title)->slug())->data(['title' => $title]);
+        $entry->save();
+
+        return $entry;
+    }
+
     protected function page(string $id, string $title): \Statamic\Contracts\Entries\Entry
     {
         $entry = Entry::make()->collection('pages')->id($id)->slug(str($title)->slug())->data(['title' => $title]);
