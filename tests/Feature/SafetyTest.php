@@ -107,6 +107,39 @@ class SafetyTest extends TestCase
         $this->actingAs($this->user())->postJson("/!/wishlist/{$action}", $payload)->assertStatus($status);
     }
 
+    public static function redirects(): array
+    {
+        return [
+            'a path on this site' => ['/products/x', '/products/x'],
+            'the home page' => ['/', '/'],
+            'an encoded backslash, which browsers keep in the path' => ['/%5Cevil.com', '/%5Cevil.com'],
+            'this site in full' => ['http://localhost/products/x', 'http://localhost/products/x'],
+            'another site' => ['https://evil.com', '/here'],
+            'another site, without a scheme' => ['//evil.com', '/here'],
+            'a backslash, which browsers read as a slash' => ['/\\evil.com', '/here'],
+            'two backslashes' => ['/\\\\evil.com', '/here'],
+            'a backslash first' => ['\\/evil.com', '/here'],
+            'a tab, which browsers drop' => ["/\t/evil.com", '/here'],
+            'a newline, which browsers drop' => ["/\n/evil.com", '/here'],
+            'a backslash before this host' => ['https://evil.com\\@localhost/', '/here'],
+            'a host that starts with this one' => ['http://localhost.evil.com/', '/here'],
+            'another scheme on this host' => ['javascript://localhost/%0Aalert(1)', '/here'],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('redirects')]
+    public function a_redirect_only_goes_somewhere_on_this_site(string $to, string $expected): void
+    {
+        $this->actingAs($this->user())->from('/here')
+            ->post('/!/wishlist/items/add', ['id' => self::A, '_redirect' => $to])
+            ->assertRedirect($expected);
+
+        $this->from('/here')
+            ->post('/!/wishlist/items/add', ['id' => ['x'], '_error_redirect' => $to])
+            ->assertRedirect($expected);
+    }
+
     #[Test]
     public function odd_links_get_an_answer_not_an_error(): void
     {

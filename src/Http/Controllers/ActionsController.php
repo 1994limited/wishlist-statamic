@@ -352,8 +352,15 @@ class ActionsController
     {
         $to = (string) $this->text($request, $field);
 
-        $local = $to !== '' && (str_starts_with($to, '/') && ! str_starts_with($to, '//')
-            || parse_url($to, PHP_URL_HOST) === $request->getHost());
+        // Nothing with a backslash or control characters: browsers read
+        // "/\evil.com" and "/<tab>/evil.com" as "//evil.com", PHP doesn't.
+        $safe = $to !== '' && ! preg_match('/[\\\\\x00-\x1F\x7F]/', $to);
+
+        // A path on this site ("/", or "/" then anything but another slash),
+        // or a web address on this site's host.
+        $local = $safe && ($to === '/' || preg_match('#^/[^/]#', $to)
+            || in_array(strtolower((string) parse_url($to, PHP_URL_SCHEME)), ['http', 'https'], true)
+                && strtolower((string) parse_url($to, PHP_URL_HOST)) === $request->getHost());
 
         return $local ? redirect()->to($to) : redirect()->back();
     }

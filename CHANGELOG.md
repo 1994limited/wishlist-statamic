@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.2 (unreleased)
+
+### Safety
+- **A form's `_redirect` and `_error_redirect` can't send visitors to another site.** Addresses such as `/\evil.com`, or with a tab or newline after the first slash, passed as paths on this site, but browsers read them as `//evil.com`. Anything with a backslash or control character is now ignored, a path must be `/` or a slash followed by something other than a slash, and a full address must be `http` or `https` on this site's host.
+
 ## 1.2.1 (2026-10-15)
 
 ### Fixed
