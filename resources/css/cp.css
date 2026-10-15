@@ -1,0 +1,9 @@
+@import "@statamic/cms/tailwind.css";
+
+@source '../**/*.vue';
+
+/*
+    Statamic declares its own utilities layer above the addon's, so a state
+    variant (hover:, dark:) only wins with Tailwind's important modifier:
+    hover:underline!, dark:divide-gray-700!.
+*/

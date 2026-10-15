@@ -1,0 +1,171 @@
+# Templates
+
+This page builds a wishlist into a site step by step: the script, a save button, a count, a wishlist page, several lists and a shared page. Every step works with all three [drivers](drivers.md). For every tag and parameter, see [Tags](tags.md). For complete templates to copy, see [Examples](examples.md).
+
+![Dog-ear Books, the demo shop these examples come from](images/shop.png)
+
+## 1. Add the script
+
+In your layout's `<head>`:
+
+```antlers
+{{ wishlist:scripts }}
+```
+
+The script sends the forms below with `fetch()` so the page doesn't reload, and keeps buttons, counts and lists up to date. It's deferred, so it doesn't hold up the page. The tag also adds a few lines of CSS that show the right label on save buttons from the first paint. Everything except the browser driver also works without the script, as ordinary form posts.
+
+## 2. A save button
+
+Wherever you show an entry, in a listing or on its own page:
+
+```antlers
+{{ wishlist:toggle id="{{ id }}" }}
+    <button type="submit">
+        <span data-wishlist-when="not-added">♡ Save</span>
+        <span data-wishlist-when="added">♥ Saved</span>
+    </button>
+{{ /wishlist:toggle }}
+```
+
+- `data-wishlist-when` marks the label for each state. The right one shows from the first paint, because the form says whether the entry is saved (`data-wishlist-active`), and stays right after each click.
+- With the browser driver the server can't know, so both labels stay hidden (keeping their space) until the script has the list.
+- `{{ added }}` is also available inside the tag, if you'd rather write the label with `{{ if added }}`.
+- The form gets `data-wishlist-active="true"` and its button `aria-pressed="true"` while the entry is saved, for styling:
+
+```css
+[data-wishlist-active="true"] button { background: crimson; color: white; }
+```
+
+Prefer a plain button of your own? The script handles it:
+
+```antlers
+<button {{ wishlist:toggle_attrs id="{{ id }}" }}>
+    <span data-wishlist-when="not-added">♡</span>
+    <span data-wishlist-when="added">♥</span>
+</button>
+```
+
+That one needs the script, since it isn't a form.
+
+## 3. A count in the header
+
+```antlers
+<a href="/wishlist">Wishlist <span data-wishlist-count>{{ wishlist:count }}</span></a>
+```
+
+The tag gives the count when the page is rendered. The attribute keeps it current as the visitor saves things, and fills it in with the browser driver.
+
+## 4. The wishlist page
+
+Make a page (say `/wishlist`) and a partial to draw the list, `resources/views/partials/wishlist.antlers.html`:
+
+```antlers
+<h2>{{ title }} ({{ count }})</h2>
+
+{{ if no_results }}
+    <p>Nothing saved yet.</p>
+{{ else }}
+    <ul>
+        {{ items }}
+            <li>
+                <a href="{{ url }}">{{ title }}</a>
+                {{ if wishlist_item:notes }}<small>{{ wishlist_item:notes }}</small>{{ /if }}
+                <button {{ wishlist:toggle_attrs id="{{ id }}" }}>Remove</button>
+            </li>
+        {{ /items }}
+    </ul>
+{{ /if }}
+```
+
+Each item has all of its entry's fields (`title`, `url`, your own fields), plus `wishlist_item` with `added_at`, `notes`, `quantity` and any other [item fields](configuration.md#what-can-be-saved).
+
+Then in the page's template:
+
+```antlers
+{{ wishlist:render partial="wishlist" }}
+    <p>Loading your wishlist…</p>
+{{ /wishlist:render }}
+```
+
+With the file and database drivers the partial is rendered straight away. With the browser driver, "Loading…" shows until the script has the list rendered. Either way it's drawn again whenever the list changes, so **Remove** takes the item away in place.
+
+With a server driver you can also loop over the list directly, without a partial:
+
+```antlers
+{{ wishlist }}
+    <h2>{{ title }}</h2>
+    {{ items }}<a href="{{ url }}">{{ title }}</a>{{ /items }}
+{{ /wishlist }}
+```
+
+That won't redraw itself or work with the browser driver, though. `{{ wishlist:render }}` does both.
+
+![A wishlist page with a list picker, notes, a share link and list forms](images/wishlist.png)
+
+## 5. Several lists
+
+Visitors can keep more than one list: "Birthday", "Kitchen ideas". Add a picker, and forms to make, rename and delete lists:
+
+```antlers
+<label>List <select data-wishlist-lists></select></label>
+
+{{ wishlist:render partial="wishlist" }}{{ /wishlist:render }}
+
+{{ wishlist:rename_list }}
+    <input name="title" placeholder="New name"> <button type="submit">Rename</button>
+{{ /wishlist:rename_list }}
+
+{{ wishlist:delete_list }}
+    <button type="submit">Delete this list</button>
+{{ /wishlist:delete_list }}
+
+{{ wishlist:create_list }}
+    <input name="title" placeholder="New list name" required> <button type="submit">Make a new list</button>
+{{ /wishlist:create_list }}
+```
+
+The script fills the picker with the visitor's lists. The drawn list, the share link and the rename and delete forms all follow whichever list is picked, and a new list is picked as it's made.
+
+Save buttons put things on the visitor's **default** list (their first, unless they make another the default). To save to a particular list, pass `list="…"`:
+
+```antlers
+{{ wishlist:lists }}
+    {{ wishlist:add id="{{ page:id }}" list="{{ id }}" }}
+        <button type="submit">Add to {{ title }}</button>
+    {{ /wishlist:add }}
+{{ /wishlist:lists }}
+```
+
+(`{{ wishlist:lists }}` reads lists on the server, so this needs the file or database driver.)
+
+## 6. Share links
+
+```antlers
+<input data-wishlist-share readonly value="{{ wishlist:share_url }}">
+<button data-wishlist-copy-share>Copy link</button>
+```
+
+The input shows the picked list's share link, and the button copies it. The button gets `data-wishlist-copied` for two seconds afterwards, to show "Copied".
+
+The link opens a read-only page with your layout. To change how it looks, see [Share links](sharing.md#the-shared-page).
+
+## 7. Messages and errors
+
+With the script, a form that fails gets `data-wishlist-error="…"`, with the message, and `document` gets a `wishlist:error` event. You can show it with CSS:
+
+```css
+form[data-wishlist-error]::after { content: attr(data-wishlist-error); color: crimson; }
+```
+
+or listen for the event (see [JavaScript](javascript.md#events)).
+
+Without the script, the page reloads after each form. Show the message in your layout:
+
+```antlers
+{{ if {wishlist:success} }}<p class="notice">{{ wishlist:success }}</p>{{ /if }}
+{{ if {wishlist:error} }}<p class="error">{{ wishlist:error }}</p>{{ /if }}
+```
+
+## Statically cached pages
+
+The script gets the visitor's lists and a fresh CSRF token from the server when the page loads, so save buttons, counts and `{{ wishlist:render }}` all work on fully cached pages. What the tags print when the page is cached is whoever's lists were rendered first. Use the `data-wishlist-*` attributes for anything personal on cached pages, or wrap those tags in `{{ nocache }}`.

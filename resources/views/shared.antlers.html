@@ -1,0 +1,41 @@
+{{#
+    The page a wishlist share link opens. Rendered inside your layout
+    (wishlist.share.layout) with:
+
+        title       the list's title
+        items       each entry's fields, plus wishlist_item (added_at, notes, quantity)
+        count, no_results
+        is_owner    true when the visitor is looking at their own list
+        share_key / encoded   what {{ wishlist:import }} needs to copy the list
+
+    Copy it to resources/views/wishlist/shared.antlers.html, set
+    wishlist.share.template to "wishlist/shared", and make it your own.
+#}}
+
+<section class="wishlist-shared">
+    <header>
+        <p class="wishlist-shared__eyebrow">Shared wishlist</p>
+        <h1>{{ title }}</h1>
+        <p>{{ count }} {{ count == 1 ? 'item' : 'items' }}</p>
+    </header>
+
+    {{ if no_results }}
+        <p>This wishlist is empty, or what was on it is no longer available.</p>
+    {{ else }}
+        <ul class="wishlist-shared__items">
+            {{ items }}
+                <li>
+                    <a href="{{ url }}">{{ title }}</a>
+                    {{ if wishlist_item:quantity }}<span> &times; {{ wishlist_item:quantity }}</span>{{ /if }}
+                    {{ if wishlist_item:notes }}<p>{{ wishlist_item:notes }}</p>{{ /if }}
+                </li>
+            {{ /items }}
+        </ul>
+
+        {{ unless is_owner }}
+            {{ wishlist:import }}
+                <button type="submit">Save these to my wishlist</button>
+            {{ /wishlist:import }}
+        {{ /unless }}
+    {{ /if }}
+</section>

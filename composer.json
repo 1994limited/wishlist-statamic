@@ -1,0 +1,63 @@
+{
+    "name": "1994/wishlist-statamic",
+    "description": "Wishlists for Statamic: let visitors save entries to named lists, kept in flat files, the database or the visitor's own browser, and share them with a link.",
+    "type": "statamic-addon",
+    "license": "proprietary",
+    "keywords": [
+        "statamic",
+        "statamic-addon",
+        "wishlist",
+        "favourites",
+        "shortlist"
+    ],
+    "authors": [
+        {
+            "name": "1994",
+            "email": "hello@1994.co.uk",
+            "homepage": "https://1994.co.uk"
+        }
+    ],
+    "support": {
+        "email": "hello@1994.co.uk"
+    },
+    "autoload": {
+        "psr-4": {
+            "NineteenNinetyFour\\Wishlist\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NineteenNinetyFour\\Wishlist\\Tests\\": "tests"
+        }
+    },
+    "require": {
+        "php": "^8.3",
+        "statamic/cms": "^6.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.20",
+        "orchestra/testbench": "^10.0|^11.0",
+        "phpunit/phpunit": "^12.0"
+    },
+    "extra": {
+        "statamic": {
+            "name": "Wishlist",
+            "description": "Let visitors save entries to wishlists and share them with a link. Lists live in flat files, the database or the visitor's browser.",
+            "developer": "1994",
+            "developer-url": "https://1994.co.uk"
+        },
+        "laravel": {
+            "providers": [
+                "NineteenNinetyFour\\Wishlist\\ServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pixelfear/composer-dist-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
