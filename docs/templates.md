@@ -147,6 +147,18 @@ Save buttons put things on the visitor's **default** list (their first, unless t
 
 The input shows the picked list's share link, and the button copies it. The button gets `data-wishlist-copied` for two seconds afterwards, to show "Copied".
 
+On phones, add a button that opens the share sheet, so visitors can send the list straight to Messages or WhatsApp:
+
+```antlers
+<button class="share-only" data-wishlist-native-share data-wishlist-share-text="Books I'd love: :title">Share…</button>
+```
+
+```css
+[data-wishlist-can-share="false"] .share-only { display: none; }
+```
+
+Where there's no share sheet (most desktop browsers, and pages on http) the button copies the link instead, so you can also leave it showing everywhere.
+
 The link opens a read-only page with your layout. To change how it looks, see [Share links](sharing.md#the-shared-page).
 
 ## 7. Messages and errors

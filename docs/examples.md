@@ -93,6 +93,7 @@ The page's template:
     <button data-wishlist-copy-share>
         <span class="copy">Copy link</span><span class="copied">Copied</span>
     </button>
+    <button class="share-only" data-wishlist-native-share data-wishlist-share-text="Books I'd love: :title">Share…</button>
 </div>
 
 {{ wishlist:rename_list }}
@@ -138,6 +139,8 @@ And the CSS for the bits the script switches:
 [data-wishlist-copy-share] .copied,
 [data-wishlist-copy-share][data-wishlist-copied] .copy { display: none; }
 [data-wishlist-copy-share][data-wishlist-copied] .copied { display: inline; }
+
+[data-wishlist-can-share="false"] .share-only { display: none; }
 
 form[aria-busy="true"] { opacity: .6; }
 form[data-wishlist-error]::after { content: attr(data-wishlist-error); display: block; color: crimson; }

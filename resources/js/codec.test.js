@@ -10,7 +10,7 @@ function load() {
     const window = { addEventListener: noop };
     const context = {
         window,
-        document: { readyState: 'complete', addEventListener: noop, querySelectorAll: () => [], dispatchEvent: noop },
+        document: { readyState: 'complete', addEventListener: noop, querySelectorAll: () => [], dispatchEvent: noop, documentElement: { setAttribute: noop } },
         localStorage: { getItem: () => null, setItem: noop },
         fetch: () => new Promise(noop),
         CustomEvent: class {},

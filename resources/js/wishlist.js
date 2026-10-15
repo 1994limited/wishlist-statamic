@@ -22,6 +22,10 @@
  *                               a link's href, an input's value, or text,
  *                               set to the list's share link
  *   [data-wishlist-copy-share]  a button that copies the share link
+ *   [data-wishlist-native-share] a button that opens the device's share
+ *                               sheet with the link, or copies it where
+ *                               there's no share sheet; <html> gets
+ *                               data-wishlist-can-share="true|false"
  *   [data-wishlist-render]      redrawn with your partial when lists change;
  *                               without a data-wishlist-list of its own it
  *                               draws the picked list
@@ -409,6 +413,8 @@
         has: has,
         count: count,
         shareUrl: shareUrl,
+        /** Whether the device has a share sheet (the Web Share API) here. */
+        canShare: canShare,
         /** The list picked in a [data-wishlist-lists] select (or the default). */
         picked: function () {
             return pickedList();
@@ -510,8 +516,8 @@
         document.querySelectorAll('select[data-wishlist-lists]').forEach(fillPicker);
 
         // Nothing to copy until there's a list with a link.
-        document.querySelectorAll('[data-wishlist-copy-share]').forEach(function (el) {
-            var url = shareUrl(el.getAttribute('data-wishlist-copy-share') || pickedList());
+        document.querySelectorAll('[data-wishlist-copy-share], [data-wishlist-native-share]').forEach(function (el) {
+            var url = shareUrl(el.getAttribute('data-wishlist-copy-share') || el.getAttribute('data-wishlist-native-share') || pickedList());
             if ('disabled' in el) el.disabled = !url;
             el.setAttribute('aria-disabled', url ? 'false' : 'true');
         });
@@ -645,32 +651,75 @@
             return;
         }
 
+        var sharer = event.target.closest && event.target.closest('[data-wishlist-native-share]');
+        if (sharer) {
+            event.preventDefault();
+            nativeShare(sharer);
+            return;
+        }
+
         var copy = event.target.closest && event.target.closest('[data-wishlist-copy-share]');
         if (copy) {
             event.preventDefault();
             var url = shareUrl(copy.getAttribute('data-wishlist-copy-share') || pickedList());
             if (!url) return;
 
-            copyText(url).then(
-                function () {
-                    copy.removeAttribute('data-wishlist-copy-failed');
-                    copy.setAttribute('data-wishlist-copied', 'true');
-                    setTimeout(function () { copy.removeAttribute('data-wishlist-copied'); }, 2000);
-                    document.dispatchEvent(new CustomEvent('wishlist:copied', { detail: { url: url } }));
-                },
-                function () {
-                    // Couldn't copy: select the link instead, so the visitor
-                    // can copy it themselves.
-                    copy.setAttribute('data-wishlist-copy-failed', 'true');
-                    var field = document.querySelector('input[data-wishlist-share]');
-                    if (field) {
-                        field.focus();
-                        field.select();
-                    }
-                }
-            );
+            copyWithFeedback(copy, url);
         }
     });
+
+    function copyWithFeedback(button, url) {
+        return copyText(url).then(
+            function () {
+                button.removeAttribute('data-wishlist-copy-failed');
+                button.setAttribute('data-wishlist-copied', 'true');
+                setTimeout(function () { button.removeAttribute('data-wishlist-copied'); }, 2000);
+                document.dispatchEvent(new CustomEvent('wishlist:copied', { detail: { url: url } }));
+            },
+            function () {
+                // Couldn't copy: select the link instead, so the visitor
+                // can copy it themselves.
+                button.setAttribute('data-wishlist-copy-failed', 'true');
+                var field = document.querySelector('input[data-wishlist-share]');
+                if (field) {
+                    field.focus();
+                    field.select();
+                }
+            }
+        );
+    }
+
+    // The Web Share API (the phone's share sheet) needs a secure page too,
+    // and isn't in every desktop browser.
+    function canShare() {
+        return !!(window.isSecureContext && navigator.share);
+    }
+
+    function nativeShare(button) {
+        var listId = button.getAttribute('data-wishlist-native-share') || pickedList();
+        var url = shareUrl(listId);
+        var l = list(listId);
+        if (!url || !l) return;
+
+        if (!canShare()) {
+            copyWithFeedback(button, url);
+            return;
+        }
+
+        var data = { title: l.title, url: url };
+        var text = button.getAttribute('data-wishlist-share-text');
+        if (text) data.text = text.split(':title').join(l.title);
+
+        navigator.share(data).then(
+            function () {
+                document.dispatchEvent(new CustomEvent('wishlist:shared', { detail: { url: url } }));
+            },
+            function (error) {
+                // Closing the share sheet isn't a failure.
+                if (!error || error.name !== 'AbortError') copyWithFeedback(button, url);
+            }
+        );
+    }
 
     // The Clipboard API only exists on secure pages (https, or localhost),
     // so local and staging sites on http fall back to the older way.
@@ -719,6 +768,8 @@
     window.Wishlist = Wishlist;
 
     function start() {
+        document.documentElement.setAttribute('data-wishlist-can-share', canShare() ? 'true' : 'false');
+
         ready.then(function () {
             // The server drivers rendered these already; draw them again
             // only once the list changes.

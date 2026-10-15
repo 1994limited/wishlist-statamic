@@ -15,6 +15,8 @@ Most sites need no JavaScript of their own: the attributes below cover buttons, 
 | `select[data-wishlist-lists]` | Filled with the visitor's lists. Picks which list is drawn, shared and acted on by list forms that don't name one. A new list is picked as it's made. |
 | `data-wishlist-share` | A link's `href`, an input's value, or the element's text, set to the share link of the picked list (or `="list id"`). |
 | `data-wishlist-copy-share` | Copies the share link (the picked list, or `="list id"`). Disabled while there's no list to share. Gets `data-wishlist-copied` for two seconds afterwards. If the browser won't copy, it gets `data-wishlist-copy-failed` and the `data-wishlist-share` input is selected, so the visitor can copy it themselves. |
+| `data-wishlist-native-share` | Opens the device's share sheet (Messages, WhatsApp, Mail…) with the picked list's title and link (or `="list id"`). `data-wishlist-share-text="…"` adds a message; `:title` in it becomes the list's title. Where there's no share sheet (most desktop browsers, and any http page) it copies the link instead, as `data-wishlist-copy-share` does. Disabled while there's no list to share. |
+| `html[data-wishlist-can-share]` | `"true"` or `"false"`: whether this device has a share sheet here. Use it to show a Share button only where it opens one. |
 | `data-wishlist-render` | Rendered by `{{ wishlist:render }}`. Drawn again when its list changes. |
 
 Elements added to the page later (by your own scripts, say) work too: clicks and submits are handled at the document. Their state is filled in at the next change, or straight away if you call `Wishlist.pick(Wishlist.picked())`.
@@ -32,6 +34,7 @@ Wishlist.list(listId);            // one list; the default without an ID
 Wishlist.has(entryId, listId);    // listId optional; 'any' for any list
 Wishlist.count(listId);           // listId optional; 'all' for every list
 Wishlist.shareUrl(listId);        // the share link
+Wishlist.canShare();              // whether the device has a share sheet here
 Wishlist.picked();                // the list picked in a [data-wishlist-lists] select
 
 // Changing
@@ -77,6 +80,7 @@ On `document`:
 | `wishlist:change` | `{ lists, result }` | Anything changed, here or (browser driver) in another tab. |
 | `wishlist:error` | `{ message }` | A change failed. |
 | `wishlist:copied` | `{ url }` | A share link was copied. |
+| `wishlist:shared` | `{ url }` | A share link was sent from the share sheet. |
 
 ```js
 document.addEventListener('wishlist:change', (event) => {

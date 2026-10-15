@@ -13,4 +13,8 @@
 - **Control Panel**: Content → Wishlists, with search, each list's items and share link, the most saved entries, and **View visitors' wishlists** and **Delete wishlists** permissions.
 - **`php please wishlist:transfer`** copies lists between the file and database drivers, keeping IDs, share keys and dates.
 - **Events**: `ItemAdded`, `ItemRemoved`, `WishlistSaved`, `WishlistDeleted`, `GuestListsMerged`.
+- **A share button** (`data-wishlist-native-share`) that opens the device's share sheet with the list's link, and copies it where there's no share sheet.
 - **Documentation** in `docs/`.
+
+### Fixed
+- **The copy link button works on http sites.** The Clipboard API only exists on https, so it now falls back to the older way of copying, and selects the link if the browser won't copy at all. It's disabled while there's no list to share.

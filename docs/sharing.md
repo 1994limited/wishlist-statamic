@@ -33,6 +33,8 @@ In templates:
 <button data-wishlist-copy-share>Copy link</button>
 ```
 
+To open the phone's share sheet instead, use `data-wishlist-native-share` (see [JavaScript](javascript.md#attributes)).
+
 `data-wishlist-share` fills in the picked list's link with every driver. `{{ wishlist:share_url }}` gives it on the server for the file and database drivers. In JavaScript: `Wishlist.shareUrl(listId)`.
 
 To share by email or on WhatsApp:
