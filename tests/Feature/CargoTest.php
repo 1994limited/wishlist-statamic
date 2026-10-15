@@ -149,7 +149,7 @@ class CargoTest extends CargoTestCase
         $this->postJson('/!/wishlist/cart')
             ->assertOk()
             ->assertJsonPath('cart.added', 2)
-            ->assertJsonPath('message', 'Added 2 to your basket. 2 couldn’t be added: out of stock, or no size or option chosen.');
+            ->assertJsonPath('message', 'Added 2 to your basket. 2 couldn’t be added: out of stock, or a size, option or amount still to choose.');
 
         // The basket the request made: the only one there is.
         $cart = Cart::query()->get()->sole();
@@ -195,5 +195,21 @@ class CargoTest extends CargoTestCase
         $this->postJson('/!/wishlist/cart')->assertNotFound();
         $this->assertSame('', $this->antlers('{{ wishlist:add_to_cart }}<button>Add all</button>{{ /wishlist:add_to_cart }}'));
         $this->assertFalse($this->wishlists()->allowed(self::SHIRT.'#S'));
+    }
+
+    #[Test]
+    public function a_voucher_of_any_amount_needs_its_amount_chosen(): void
+    {
+        // As Gift Vouchers (1994/gift-vouchers-statamic) makes them.
+        Entry::make()->collection('products')->blueprint('product')->id('66666666-6666-4666-8666-666666666666')->slug('voucher')
+            ->data(['title' => 'Gift voucher', 'voucher_amount_type' => 'open', 'voucher_min' => 1000, 'voucher_max' => 20000])->save();
+
+        $this->wishlists()->add($this->owner, '66666666-6666-4666-8666-666666666666');
+        $this->wishlists()->add($this->owner, self::MUG);
+
+        $voucher = $this->row('66666666-6666-4666-8666-666666666666')['cargo'];
+        $this->assertSame([true, true, false, null, null, false], [$voucher['needs_amount'], $voucher['needs_choice'], $voucher['needs_variant'], $voucher['price'], $voucher['saved_price'], $voucher['in_stock']]);
+
+        $this->postJson('/!/wishlist/cart')->assertOk()->assertJsonPath('cart.added', 1)->assertJsonPath('cart.skipped', ['66666666-6666-4666-8666-666666666666']);
     }
 }

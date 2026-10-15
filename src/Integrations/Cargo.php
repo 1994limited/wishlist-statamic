@@ -81,7 +81,17 @@ class Cargo
             return $product->variant($variant)?->price();
         }
 
-        return $product->isVariantProduct() ? null : $product->price();
+        return $product->isVariantProduct() || $this->choosesAmount($product) ? null : $product->price();
+    }
+
+    /**
+     * A product the shopper names their own price for: a Gift Vouchers
+     * (1994/gift-vouchers-statamic) voucher of any amount. It has no price
+     * until they choose one on its page.
+     */
+    public function choosesAmount(Product $product): bool
+    {
+        return $product->get('voucher_amount_type') === 'open';
     }
 
     /**
@@ -100,8 +110,10 @@ class Cargo
         $key = Reference::variant($item->reference);
         $variant = $key !== null ? $product->variant($key) : null;
         $needsVariant = $product->isVariantProduct() && $variant === null;
+        $needsAmount = ! $needsVariant && $this->choosesAmount($product);
+        $needsChoice = $needsVariant || $needsAmount;
 
-        $price = $needsVariant ? null : ($variant?->price() ?? $product->price());
+        $price = $needsChoice ? null : ($variant?->price() ?? $product->price());
         $stockEnabled = $variant ? $variant->isStockEnabled() : (bool) $product->isStockEnabled();
         $stock = $stockEnabled ? (int) ($variant ? $variant->stock() : $product->stock()) : null;
 
@@ -113,10 +125,14 @@ class Cargo
             'variant' => $variant?->key(),
             'variant_name' => $variant?->name(),
             'needs_variant' => $needsVariant,
+            'needs_amount' => $needsAmount,
+            // Something to choose on the product's page before it can go
+            // in the basket: a variant, or an amount.
+            'needs_choice' => $needsChoice,
             'price' => $price,
             'price_formatted' => $price !== null ? $this->money($price) : null,
             'stock' => $stock,
-            'in_stock' => ! $needsVariant && ($stock === null || $stock > 0),
+            'in_stock' => ! $needsChoice && ($stock === null || $stock > 0),
             'saved_price' => $saved,
             'saved_price_formatted' => $saved !== null ? $this->money($saved) : null,
             'price_dropped' => $drop !== null,
@@ -142,7 +158,7 @@ class Cargo
             $key = Reference::variant($item->reference);
             $variant = $product && $key !== null ? $product->variant($key) : null;
 
-            if (! $product || ($product->isVariantProduct() && ! $variant)) {
+            if (! $product || ($product->isVariantProduct() && ! $variant) || (! $variant && $this->choosesAmount($product))) {
                 $skipped[] = $item->reference;
 
                 continue;
