@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0 (unreleased)
+## 1.2.0 (2026-10-15)
 
 ### Added
 - **Choose the list when saving.** A `<select name="list" data-wishlist-lists>` inside a save form picks which list it saves to, with every driver, and the button's added state follows it. The list picked in a picker is remembered for the visit (in a `wishlist_picked` session cookie), so it's still picked on the next page, and the server draws that list first time instead of the default. See [Several lists](docs/templates.md#5-several-lists).
