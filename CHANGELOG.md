@@ -3,7 +3,7 @@
 ## 1.2.0 (unreleased)
 
 ### Added
-- **Choose the list when saving.** A `<select name="list" data-wishlist-lists>` inside a save form picks which list it saves to, with every driver, and the button's added state follows it. The list picked in a picker is remembered for the visit, so it's still picked on the next page. See [Several lists](docs/templates.md#5-several-lists).
+- **Choose the list when saving.** A `<select name="list" data-wishlist-lists>` inside a save form picks which list it saves to, with every driver, and the button's added state follows it. The list picked in a picker is remembered for the visit (in a `wishlist_picked` session cookie), so it's still picked on the next page, and the server draws that list first time instead of the default. See [Several lists](docs/templates.md#5-several-lists).
 - **Cargo.** With [Cargo](https://builtwithcargo.dev) installed, lists show each product's price and stock (`{{ cargo:* }}`), keep the price it was saved at and say when it has dropped, and save variants as separate items (`variant` on the item tags, or a `variant` field in the form). `{{ wishlist:add_to_cart }}` puts a whole list in the basket, leaving out what's sold out or still needs a variant chosen. Gift Vouchers of any amount are treated as needing their amount chosen. Nothing changes without Cargo. See [Cargo](docs/cargo.md), and the new [Dog-ear Books with Cargo](https://github.com/1994limited/wishlist-cargo-demo) demo.
 
 ## 1.1.0 (2026-10-15)

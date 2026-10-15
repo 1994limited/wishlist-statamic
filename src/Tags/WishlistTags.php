@@ -127,7 +127,7 @@ class WishlistTags extends Tags
 
     public function shareUrl(): ?string
     {
-        $list = $this->findList();
+        $list = $this->pickedList();
 
         return $list ? $this->presenter()->shareUrl($list) : null;
     }
@@ -265,7 +265,7 @@ class WishlistTags extends Tags
     {
         $partial = (string) $this->params->get('partial');
         $view = str_contains($partial, '::') ? $partial : 'partials/'.ltrim(preg_replace('#^partials/#', '', $partial), '/');
-        $list = $this->findList();
+        $list = $this->pickedList();
 
         $html = $this->wishlists()->storesOnServer()
             ? view($view, $list ? $this->presenter()->list($list) : $this->list())->render()
@@ -292,6 +292,7 @@ class WishlistTags extends Tags
             'endpoint' => url('!/wishlist'),
             'shareUrl' => config('wishlist.share.enabled', true) ? url(trim(config('wishlist.share.route', 'wishlist/shared'), '/')) : null,
             'storageKey' => config('wishlist.drivers.browser.storage_key', 'statamic.wishlist'),
+            'pickedCookie' => Wishlists::PICKED_COOKIE,
             'defaultTitle' => config('wishlist.default_list_title', 'My Wishlist'),
             'limits' => config('wishlist.limits'),
             'itemFields' => array_values((array) config('wishlist.item_fields', [])),
@@ -413,7 +414,7 @@ class WishlistTags extends Tags
             return '';
         }
 
-        $list = $this->findList();
+        $list = $this->pickedList();
 
         return $this->form('cart', array_filter(['list' => $list?->id()]), ['data-wishlist-form' => 'cart']);
     }
@@ -423,6 +424,26 @@ class WishlistTags extends Tags
         $owner = $this->currentOwner();
 
         return $owner ? $this->wishlists()->find($owner, $this->params->get('list')) : null;
+    }
+
+    /**
+     * The list named, or the one the visitor picked in a list picker (kept
+     * in a cookie by the script), or the default. For what the script ties
+     * to the picker: drawn lists, the share link, the basket form. So the
+     * page arrives showing the picked list.
+     */
+    protected function pickedList(): ?Wishlist
+    {
+        $owner = $this->currentOwner();
+        $picked = request()->cookie(Wishlists::PICKED_COOKIE);
+
+        if ($owner && $this->params->get('list') === null && is_string($picked) && $picked !== '') {
+            if ($list = $this->wishlists()->find($owner, substr($picked, 0, 64))) {
+                return $list;
+            }
+        }
+
+        return $this->findList();
     }
 
     protected function currentOwner(): ?Owner

@@ -50,6 +50,7 @@
             endpoint: '/!/wishlist',
             shareUrl: '/wishlist/shared',
             storageKey: 'statamic.wishlist',
+            pickedCookie: 'wishlist_picked',
             defaultTitle: 'My Wishlist',
             limits: { lists: 20, items: 500 },
             itemFields: ['notes', 'quantity'],
@@ -447,23 +448,16 @@
 
     // The list picked in a [data-wishlist-lists] select, which list
     // forms and drawn lists follow. A new list is picked as it's made.
-    // It's remembered in this browser, so it's still picked on the next page.
-    var pickedKey = config.storageKey + '.picked';
-    var picked = null;
-    try {
-        picked = sessionStorage.getItem(pickedKey);
-    } catch (e) {
-        // Storage blocked: the pick lasts for this page.
-    }
+    // It's kept in a cookie for the visit, so it's still picked on the next
+    // page, and the server draws that list first time.
+    var pickedCookie = config.pickedCookie;
+    var picked = (document.cookie.match(new RegExp('(?:^|; )' + pickedCookie + '=([^;]*)')) || [])[1] || null;
+    if (picked) picked = decodeURIComponent(picked);
 
     function pick(listId) {
         picked = listId || null;
-        try {
-            if (picked) sessionStorage.setItem(pickedKey, picked);
-            else sessionStorage.removeItem(pickedKey);
-        } catch (e) {
-            // As above.
-        }
+        document.cookie = pickedCookie + '=' + (picked ? encodeURIComponent(picked) : '') +
+            '; path=/; SameSite=Lax' + (picked ? '' : '; max-age=0') + (location.protocol === 'https:' ? '; Secure' : '');
     }
 
     function pickedList() {
@@ -630,8 +624,8 @@
 
     var rendering = new WeakMap();
 
-    function renderUrl(container, listId) {
-        var l = list(container.getAttribute('data-wishlist-list') || listId || pickedList());
+    function renderUrl(container) {
+        var l = list(container.getAttribute('data-wishlist-list') || pickedList());
         var references = l ? l.items.map(function (i) { return i.id; }) : [];
         return (
             config.endpoint +
@@ -918,12 +912,10 @@
 
         ready.then(function () {
             // The server drivers rendered these already, with the list named
-            // or the default. Draw them again only once that changes, or when
-            // another list is picked (a pick remembered from an earlier page).
+            // or the picked one. Draw them again only once that changes.
             if (config.driver !== 'browser') {
-                var standard = list();
                 document.querySelectorAll('[data-wishlist-render]').forEach(function (container) {
-                    rendering.set(container, renderUrl(container, standard && standard.id));
+                    rendering.set(container, renderUrl(container));
                 });
             }
             refresh();

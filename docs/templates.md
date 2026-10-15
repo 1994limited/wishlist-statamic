@@ -248,7 +248,7 @@ Visitors can keep more than one list: "Birthday", "Kitchen ideas". Add a picker,
 
 </details>
 
-The script fills the picker with the visitor's lists. The drawn list, the share link and the rename and delete forms all follow whichever list is picked, and a new list is picked as it's made. The pick is remembered for the rest of the visit (in the browser tab's `sessionStorage`), so it's still picked on the next page.
+The script fills the picker with the visitor's lists. The drawn list, the share link and the rename and delete forms all follow whichever list is picked, and a new list is picked as it's made. The pick is remembered for the rest of the visit, in a `wishlist_picked` cookie, so it's still picked on the next page. With the file and database drivers, `{{ wishlist:render }}` and `{{ wishlist:share_url }}` use it too (unless given a `list`), so the page arrives showing the picked list. Saves and counts without a `list` stay on the default list.
 
 Save buttons put things on the visitor's **default** list (their first, unless they make another the default). To save to a particular list, pass `list="…"`:
 

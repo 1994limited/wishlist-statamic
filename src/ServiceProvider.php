@@ -4,6 +4,7 @@ namespace NineteenNinetyFour\Wishlist;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
@@ -92,6 +93,9 @@ class ServiceProvider extends AddonServiceProvider
 
     public function bootAddon(): void
     {
+        // Set by the script, so not encrypted.
+        EncryptCookies::except(Wishlists::PICKED_COOKIE);
+
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'wishlist');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'wishlist');
 

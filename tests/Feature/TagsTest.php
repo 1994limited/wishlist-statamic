@@ -7,6 +7,7 @@ use NineteenNinetyFour\Wishlist\Item;
 use NineteenNinetyFour\Wishlist\Owner;
 use NineteenNinetyFour\Wishlist\Tests\TestCase;
 use NineteenNinetyFour\Wishlist\Wishlist;
+use NineteenNinetyFour\Wishlist\Wishlists;
 use PHPUnit\Framework\Attributes\Test;
 use Statamic\Facades\Entry;
 
@@ -190,6 +191,33 @@ class TagsTest extends TestCase
             $this->assertStringStartsWith('<div data-wishlist-render="', $html);
             $this->assertStringContainsString('data-wishlist-list="'.$this->gifts->id().'"', $html);
             $this->assertStringContainsString('>Gifts: [Linen Shirt][Wool Coat]</div>', $html);
+        } finally {
+            unlink(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html');
+        }
+    }
+
+    #[Test]
+    public function the_picked_list_is_drawn_and_shared_first_time(): void
+    {
+        file_put_contents(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html', '{{ title }}');
+
+        try {
+            request()->cookies->set(Wishlists::PICKED_COOKIE, $this->gifts->id());
+
+            $this->assertStringContainsString('>Gifts</div>', $this->antlers('{{ wishlist:render partial="saved" }}'));
+            $this->assertSame('http://localhost/wishlist/shared/'.$this->gifts->shareKey(), $this->antlers('{{ wishlist:share_url }}'));
+
+            // Saves and counts stay on the default list.
+            $this->assertSame('1', $this->antlers('{{ wishlist:count }}'));
+
+            // A list named in the tag wins.
+            $this->assertStringContainsString('>My Wishlist</div>', $this->antlers('{{ wishlist:render partial="saved" list="'.$this->default->id().'" }}'));
+
+            // Someone else's list, or one that's gone, is ignored.
+            $other = Wishlist::make(Owner::user($this->user('other@example.com')), 'Theirs');
+            $this->wishlists()->save($other);
+            request()->cookies->set(Wishlists::PICKED_COOKIE, $other->id());
+            $this->assertStringContainsString('>My Wishlist</div>', $this->antlers('{{ wishlist:render partial="saved" }}'));
         } finally {
             unlink(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html');
         }

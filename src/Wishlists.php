@@ -25,6 +25,13 @@ use Statamic\Facades\Data;
  */
 class Wishlists
 {
+    /**
+     * The cookie the script keeps the picked list in, so the server can
+     * draw it. A list ID, not a secret: it's only used if it's one of the
+     * visitor's own lists.
+     */
+    public const PICKED_COOKIE = 'wishlist_picked';
+
     /** @var array<string, Collection<int, Wishlist>> */
     protected array $memo = [];
 
