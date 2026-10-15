@@ -7,4 +7,6 @@
 /.gitattributes export-ignore
 /.gitignore export-ignore
 /resources/js/codec.test.js export-ignore
-/docs/images export-ignore
+# Marketplace listing images, all but the cover the README shows.
+/docs/marketplace/** export-ignore
+/docs/marketplace/cover-1600x900.png -export-ignore

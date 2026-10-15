@@ -54,6 +54,20 @@ abstract class TestCase extends AddonTestCase
         return $entry;
     }
 
+    /**
+     * An entry in a dated collection that hides future and past entries,
+     * as for events: Statamic reports it scheduled or expired.
+     */
+    protected function event(string $id, string $title, string $date): \Statamic\Contracts\Entries\Entry
+    {
+        Collection::make('events')->dated(true)->futureDateBehavior('private')->pastDateBehavior('private')->routes('/events/{slug}')->save();
+
+        $entry = Entry::make()->collection('events')->id($id)->slug(str($title)->slug())->date($date)->data(['title' => $title]);
+        $entry->save();
+
+        return $entry;
+    }
+
     protected function page(string $id, string $title): \Statamic\Contracts\Entries\Entry
     {
         $entry = Entry::make()->collection('pages')->id($id)->slug(str($title)->slug())->data(['title' => $title]);

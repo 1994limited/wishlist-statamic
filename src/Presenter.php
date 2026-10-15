@@ -67,8 +67,8 @@ class Presenter
     }
 
     /**
-     * The items that can still be shown: not deleted, and not unpublished
-     * since they were added. Counts use this too, so they match the list.
+     * The items that can still be shown: not deleted, and not unpublished,
+     * scheduled or expired since they were added. Counts use this too, so they match the list.
      *
      * @param  iterable<Item>  $items
      * @return array<int, Item>
@@ -80,7 +80,7 @@ class Presenter
         foreach ($items as $item) {
             $data = $item->resolve();
 
-            if ($data instanceof Augmentable && ! ($data instanceof Entry && ! $data->published())) {
+            if ($data instanceof Augmentable && ! ($data instanceof Entry && $data->status() !== 'published')) {
                 $available[] = $item;
             }
         }

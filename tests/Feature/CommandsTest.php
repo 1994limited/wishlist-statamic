@@ -37,6 +37,18 @@ class CommandsTest extends TestCase
     }
 
     #[Test]
+    public function transfer_says_to_migrate_when_the_tables_do_not_exist(): void
+    {
+        $this->wishlists()->save(Wishlist::make(Owner::user('jo')));
+
+        $this->artisan('wishlist:transfer', ['--from' => 'file', '--to' => 'database', '--force' => true])
+            ->expectsOutputToContain('The wishlist tables don\'t exist yet.')
+            ->expectsOutputToContain('php please vendor:publish --tag=wishlist-migrations')
+            ->expectsOutputToContain('php artisan migrate')
+            ->assertFailed();
+    }
+
+    #[Test]
     public function transfer_refuses_the_browser_driver(): void
     {
         $this->artisan('wishlist:transfer', ['--from' => 'browser', '--to' => 'file'])->assertFailed();

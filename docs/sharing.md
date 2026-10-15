@@ -74,7 +74,7 @@ The template gets:
 | Variable | |
 | --- | --- |
 | `title` | The list's title. Also used by most layouts for `<title>`. |
-| `items` | The items, with each entry's fields and `wishlist_item` (see [Tags](tags.md#item-variables)). Unpublished and deleted entries are left out. |
+| `items` | The items, with each entry's fields and `wishlist_item` (see [Tags](tags.md#item-variables)). Unpublished, scheduled, expired and deleted entries are left out. |
 | `count`, `no_results` | How many, and whether there are none. |
 | `is_owner` | True when the visitor is looking at their own list (server drivers). Hide the "save these" button then. |
 | `share_key`, `encoded`, `references` | What `{{ wishlist:import }}` needs. You won't usually use them directly. |

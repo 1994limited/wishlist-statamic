@@ -9,6 +9,7 @@ use NineteenNinetyFour\Wishlist\ShareCodec;
 use NineteenNinetyFour\Wishlist\Tests\TestCase;
 use NineteenNinetyFour\Wishlist\Wishlist;
 use PHPUnit\Framework\Attributes\Test;
+use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Facades\User;
 
@@ -74,6 +75,26 @@ class SharedPageTest extends TestCase
             ->assertSee('0 items')
             ->assertSee('This wishlist is empty')
             ->assertDontSee('Linen Shirt');
+    }
+
+    #[Test]
+    public function entries_expired_since_are_left_out(): void
+    {
+        $this->event('55555555-5555-4555-8555-555555555555', 'Summer Fair', now()->addWeek()->toDateString());
+        $this->event('66666666-6666-4666-8666-666666666666', 'Spring Fair', now()->addWeek()->toDateString());
+        Collection::find('events')->futureDateBehavior('public')->save();
+        $list = Wishlist::make(Owner::user('jo'))->setDefault()
+            ->add(Item::make('55555555-5555-4555-8555-555555555555'))
+            ->add(Item::make('66666666-6666-4666-8666-666666666666'));
+        $this->wishlists()->save($list);
+
+        Entry::find('66666666-6666-4666-8666-666666666666')->date(now()->subDay()->toDateString())->save();
+
+        $this->get('/wishlist/shared/'.$list->shareKey())
+            ->assertOk()
+            ->assertSee('1 item')
+            ->assertSee('Summer Fair')
+            ->assertDontSee('Spring Fair');
     }
 
     #[Test]

@@ -65,7 +65,7 @@ Each item has every field of its entry (`title`, `url`, `price`, …), plus:
 | `wishlist_item:quantity` | The quantity they set, if any. |
 | `wishlist_item:{field}` | Any other [item field](configuration.md#what-can-be-saved). |
 
-Entries that have since been unpublished or deleted are left out.
+Entries that have since been unpublished, expired or deleted are left out.
 
 ### `{{ wishlist:has }}`
 

@@ -42,7 +42,7 @@ These don't apply to the browser driver, where lists belong to whoever is using 
 | `throttle` | `60,1` | How many changes (saves, new lists…) one visitor can make: attempts, then minutes, as for Laravel's `throttle` middleware. Over the limit they get a 429 until it resets. Reading lists isn't limited. `null` turns it off. |
 | `default_list_title` | `My Wishlist` | The title of a visitor's first list, made when they first save something. |
 
-Only published entries can be saved. Entries unpublished or deleted later drop out of lists when they're shown.
+Only published entries can be saved. In a dated collection that hides future or past entries, scheduled and expired entries count as unpublished, as they 404 on the site. Entries unpublished, expired or deleted later drop out of lists when they're shown.
 
 Item fields are kept as plain text up to 1,000 characters, with whole HTML tags removed (a lone `<`, as in "I <3 this", stays). They're escaped wherever they're printed. `quantity` is kept as a whole number from 1 to 9,999. Any name you add to `item_fields` is kept as text.
 

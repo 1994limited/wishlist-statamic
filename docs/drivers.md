@@ -89,13 +89,31 @@ Choose the browser driver when you don't want to hold visitors' data, or the sit
 
 ## Moving between file and database
 
-Copy every list from one driver to the other:
+Copy every list from one driver to the other. From files to the database, in this order:
 
-```bash
-php please wishlist:transfer --from=file --to=database
-```
+1. Publish the migration. While the driver is still `file` the tables aren't made, so they need to be in your own migrations first:
 
-Then switch `WISHLIST_DRIVER`. Lists keep their IDs, share keys and dates, so links people already have keep working. A list with the same ID in the target is replaced. Add `--force` to skip the question.
+   ```bash
+   php please vendor:publish --tag=wishlist-migrations
+   ```
+
+2. Run it:
+
+   ```bash
+   php artisan migrate
+   ```
+
+3. Copy the lists:
+
+   ```bash
+   php please wishlist:transfer --from=file --to=database
+   ```
+
+4. Set `WISHLIST_DRIVER=database`.
+
+Lists keep their IDs, share keys and dates, so links people already have keep working. A list with the same ID in the target is replaced. Add `--force` to skip the question. If the tables don't exist yet, the command stops and says what to run.
+
+From the database back to files, run `wishlist:transfer --from=database --to=file`, then set `WISHLIST_DRIVER=file`.
 
 The command copies; it doesn't delete. Remove the old files (or tables) once you're happy.
 

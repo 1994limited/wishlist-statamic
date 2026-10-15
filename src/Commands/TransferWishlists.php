@@ -3,6 +3,7 @@
 namespace NineteenNinetyFour\Wishlist\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Schema;
 use NineteenNinetyFour\Wishlist\ServiceProvider;
 use Statamic\Console\RunsInPlease;
 
@@ -41,6 +42,14 @@ class TransferWishlists extends Command
             return self::FAILURE;
         }
 
+        if (! $this->tablesExist()) {
+            $this->components->error('The wishlist tables don\'t exist yet. Publish the migration and run it first:');
+            $this->line('  php please vendor:publish --tag=wishlist-migrations');
+            $this->line('  php artisan migrate');
+
+            return self::FAILURE;
+        }
+
         $source = app(ServiceProvider::repositoryFor($from));
         $target = app(ServiceProvider::repositoryFor($to));
         $lists = $source->all();
@@ -61,5 +70,18 @@ class TransferWishlists extends Command
         $this->components->info("Copied {$lists->count()} wishlists to the {$to} driver. Set WISHLIST_DRIVER={$to} to use them.");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * The database driver's tables are only migrated with the site's own
+     * migrations once the driver is database, or the migration has been
+     * published. Before that, there's nowhere to copy to or from.
+     */
+    private function tablesExist(): bool
+    {
+        $schema = Schema::connection(config('wishlist.drivers.database.connection') ?: null);
+
+        return $schema->hasTable(config('wishlist.drivers.database.table', 'wishlists'))
+            && $schema->hasTable(config('wishlist.drivers.database.items_table', 'wishlist_items'));
     }
 }

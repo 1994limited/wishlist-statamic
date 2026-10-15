@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 (2026-10-15)
+
+### Fixed
+- **Scheduled and expired entries are treated like drafts.** In a dated collection that hides future or past entries, they can't be added, are left out of lists, counts and shared pages, and `/!/wishlist/resolve` no longer gives their title and URL.
+- **`wishlist:transfer` checks the database tables exist** before copying, and says what to run if they don't. [Storage drivers](docs/drivers.md#moving-between-file-and-database) now gives the steps in order: publish the migration, migrate, transfer, then switch `WISHLIST_DRIVER`.
+
+### Changed
+- The package now includes `docs/images`, which the docs link to, and leaves out the marketplace listing images except the README's cover.
+
 ## 1.0.0 (2026-10-15)
 
 The first release.

@@ -115,6 +115,17 @@ class ActionsTest extends TestCase
     }
 
     #[Test]
+    public function scheduled_and_expired_entries_cannot_be_added(): void
+    {
+        $this->event('55555555-5555-4555-8555-555555555555', 'Next Year', now()->addYear()->toDateString());
+        $this->event('66666666-6666-4666-8666-666666666666', 'Last Year', now()->subYear()->toDateString());
+        $user = $this->user();
+
+        $this->actingAs($user)->postJson('/!/wishlist/items/add', ['id' => '55555555-5555-4555-8555-555555555555'])->assertStatus(422);
+        $this->actingAs($user)->postJson('/!/wishlist/items/add', ['id' => '66666666-6666-4666-8666-666666666666'])->assertStatus(422);
+    }
+
+    #[Test]
     public function terms_can_be_added_when_their_taxonomy_is_allowed(): void
     {
         $term = $this->tag('linen');
@@ -292,6 +303,18 @@ class ActionsTest extends TestCase
             ->assertJsonPath('items.0.title', 'Wool Coat')
             ->assertJsonPath('items.0.url', '/products/wool-coat')
             ->assertJsonPath('items.1.title', 'Linen Shirt');
+    }
+
+    #[Test]
+    public function resolve_leaves_out_scheduled_and_expired_entries(): void
+    {
+        $this->event('55555555-5555-4555-8555-555555555555', 'Next Year', now()->addYear()->toDateString());
+        $this->event('66666666-6666-4666-8666-666666666666', 'Last Year', now()->subYear()->toDateString());
+
+        $this->getJson('/!/wishlist/resolve?'.http_build_query(['ids' => ['55555555-5555-4555-8555-555555555555', '66666666-6666-4666-8666-666666666666', self::A]]))
+            ->assertOk()
+            ->assertJsonCount(1, 'items')
+            ->assertJsonPath('items.0.id', self::A);
     }
 
     #[Test]

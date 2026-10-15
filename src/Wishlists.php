@@ -285,7 +285,8 @@ class Wishlists
 
     /**
      * Whether a reference may go on a list: a published entry in an allowed
-     * collection, or a term in an allowed taxonomy.
+     * collection, or a term in an allowed taxonomy. Entries a dated
+     * collection hides as scheduled or expired count as unpublished.
      */
     public function allowed(string $reference): bool
     {
@@ -294,7 +295,7 @@ class Wishlists
         if ($data instanceof Entry) {
             $collections = config('wishlist.collections');
 
-            return $data->published()
+            return $data->status() === 'published'
                 && ($collections === null || in_array($data->collectionHandle(), (array) $collections, true));
         }
 
