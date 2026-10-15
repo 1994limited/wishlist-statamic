@@ -10,6 +10,7 @@ use NineteenNinetyFour\Wishlist\Events\ItemAdded;
 use NineteenNinetyFour\Wishlist\Events\ItemRemoved;
 use NineteenNinetyFour\Wishlist\Events\WishlistDeleted;
 use NineteenNinetyFour\Wishlist\Events\WishlistSaved;
+use NineteenNinetyFour\Wishlist\Integrations\Cargo;
 use Statamic\Contracts\Auth\Protect\Protectable;
 use Statamic\Contracts\Entries\Entry;
 use Statamic\Contracts\Taxonomies\Term;
@@ -105,7 +106,7 @@ class Wishlists
             throw WishlistException::tooManyItems($this->itemLimit());
         }
 
-        $list->add($item = Item::make($reference, $this->itemData($data)));
+        $list->add($item = Item::make($reference, $this->itemData($data) + $this->savedPrice($list, $reference)));
         $this->save($list);
 
         ItemAdded::dispatch($list, $list->item($reference) ?? $item);
@@ -238,7 +239,7 @@ class Wishlists
                 continue;
             }
 
-            $list->add(Item::make($reference));
+            $list->add(Item::make($reference, $this->savedPrice($list, $reference)));
             $added++;
         }
 
@@ -289,7 +290,9 @@ class Wishlists
      */
     public function allowed(string $reference): bool
     {
-        return $this->allows(Data::find($reference));
+        $data = Reference::find($reference);
+
+        return $this->allows($data) && app(Cargo::class)->variantAllowed($reference, $data);
     }
 
     /**
@@ -344,6 +347,21 @@ class Wishlists
             ->all();
     }
 
+    /**
+     * With Cargo, a product's price when it's first saved, so a list can
+     * show when it's cheaper. Set here, never taken from the visitor.
+     */
+    protected function savedPrice(Wishlist $list, string $reference): array
+    {
+        if ($list->has($reference)) {
+            return [];
+        }
+
+        $price = app(Cargo::class)->price($reference);
+
+        return $price === null ? [] : ['saved_price' => $price];
+    }
+
     public function save(Wishlist $list): void
     {
         $this->repository->save($list->touch());
@@ -383,7 +401,7 @@ class Wishlists
         return (int) config('wishlist.limits.lists', 20);
     }
 
-    protected function itemLimit(): int
+    public function itemLimit(): int
     {
         return (int) config('wishlist.limits.items', 500);
     }

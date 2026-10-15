@@ -667,12 +667,18 @@
     function formPayload(form) {
         var data = new FormData(form);
         var payload = { data: {} };
+        var variant = null;
         data.forEach(function (value, name) {
             if (name === '_token' || name.charAt(0) === '_' || /(^|\[)(__proto__|constructor|prototype)\]?$/.test(name)) return;
-            if (name === 'id' || name === 'list' || name === 'title' || name === 'key' || name === 'i') payload[name] = value;
+            if (name === 'variant') variant = String(value);
+            else if (name === 'id' || name === 'list' || name === 'title' || name === 'key' || name === 'i') payload[name] = value;
             else if (name.indexOf('data[') === 0) payload.data[name.slice(5, -1)] = value;
             else payload.data[name] = value;
         });
+
+        // With Cargo, a variant chosen in the form is part of what's saved:
+        // "product-id#variant".
+        if (variant && payload.id) payload.id = String(payload.id).split('#')[0] + '#' + variant;
 
         // A list form with no list of its own acts on the picked list.
         if (!payload.list && form.getAttribute('data-wishlist-form').indexOf('lists/') === 0) {
@@ -697,6 +703,18 @@
 
     document.addEventListener('submit', function (event) {
         var form = event.target.closest && event.target.closest('form[data-wishlist-form]');
+
+        // "Add all to basket" (Cargo) posts as a normal form, to the
+        // basket. With the browser driver, the list goes with it.
+        if (form && form.getAttribute('data-wishlist-form') === 'cart') {
+            if (config.driver === 'browser') {
+                var l = list(form.querySelector('input[name="list"]') ? form.querySelector('input[name="list"]').value : pickedList());
+                var field = form.querySelector('input[name="i"]') || form.appendChild(Object.assign(document.createElement('input'), { type: 'hidden', name: 'i' }));
+                field.value = encode(l ? l.items.map(function (i) { return i.id; }) : []);
+            }
+            return;
+        }
+
         if (!form || !formActions[form.getAttribute('data-wishlist-form')]) return;
 
         var action = formActions[form.getAttribute('data-wishlist-form')];

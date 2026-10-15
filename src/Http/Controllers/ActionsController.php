@@ -12,9 +12,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Crypt;
 use NineteenNinetyFour\Wishlist\CurrentOwner;
 use NineteenNinetyFour\Wishlist\Http\ReadsText;
+use NineteenNinetyFour\Wishlist\Integrations\Cargo;
 use NineteenNinetyFour\Wishlist\Item;
 use NineteenNinetyFour\Wishlist\Owner;
 use NineteenNinetyFour\Wishlist\Presenter;
+use NineteenNinetyFour\Wishlist\Reference;
 use NineteenNinetyFour\Wishlist\ShareCodec;
 use NineteenNinetyFour\Wishlist\Wishlist;
 use NineteenNinetyFour\Wishlist\WishlistException;
@@ -175,6 +177,42 @@ class ActionsController
         });
     }
 
+    /**
+     * With Cargo: put a list's products in the visitor's basket.
+     */
+    public function cart(Request $request)
+    {
+        abort_unless(app(Cargo::class)->installed(), 404);
+
+        $message = function (array $result): string {
+            return $result['skipped']
+                ? __('wishlist::messages.cart_some', ['count' => $result['added'], 'skipped' => count($result['skipped'])])
+                : trans_choice('wishlist::messages.cart_all', $result['added'], ['count' => $result['added']]);
+        };
+
+        // The browser driver's list is in the visitor's browser: it sends
+        // the items, which are held to the same rules as saving them.
+        if (! $this->wishlists->storesOnServer()) {
+            $list = Wishlist::make(Owner::guest('browser'));
+            collect(ShareCodec::decode($this->text($request, 'i', 20000), $this->wishlists->itemLimit()))
+                ->filter(fn (string $reference) => $this->wishlists->allowed($reference))
+                ->each(fn (string $reference) => $list->add(Item::make($reference)));
+
+            $result = app(Cargo::class)->addToCart($list);
+
+            return $request->wantsJson()
+                ? response()->json(['success' => true, 'message' => $message($result), 'cart' => $result])
+                : $this->back($request, '_redirect')->with('wishlist_success', $message($result));
+        }
+
+        return $this->act($request, function (Owner $owner) use ($request, $message) {
+            $list = $this->wishlists->find($owner, $this->text($request, 'list', 64)) ?? throw WishlistException::listNotFound();
+            $result = app(Cargo::class)->addToCart($list);
+
+            return [$list, $message($result), ['cart' => $result]];
+        });
+    }
+
     public function createList(Request $request)
     {
         return $this->act($request, function (Owner $owner) use ($request) {
@@ -310,7 +348,11 @@ class ActionsController
             throw new WishlistException(__('wishlist::messages.not_allowed'));
         }
 
-        return $reference;
+        // A variant chosen in the form (a <select name="variant">) wins
+        // over one in the id.
+        $variant = $this->text($request, 'variant', 128);
+
+        return $variant === null ? $reference : Reference::make(Reference::base($reference), $variant);
     }
 
     /**

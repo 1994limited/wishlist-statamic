@@ -3,7 +3,6 @@
 namespace NineteenNinetyFour\Wishlist;
 
 use Carbon\CarbonImmutable;
-use Statamic\Facades\Data;
 
 /**
  * One thing on a list: a reference to Statamic data (an entry ID, or
@@ -60,7 +59,7 @@ final class Item
     public function resolve(): mixed
     {
         if ($this->resolved === false) {
-            $this->resolved = Data::find($this->reference);
+            $this->resolved = Reference::find($this->reference);
         }
 
         return $this->resolved;

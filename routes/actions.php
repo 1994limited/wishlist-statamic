@@ -34,4 +34,7 @@ Route::middleware(array_filter([config('wishlist.throttle') ? 'throttle:'.config
     Route::post('lists/default', [ActionsController::class, 'defaultList'])->name('lists.default');
     Route::post('lists/share', [ActionsController::class, 'shareList'])->name('lists.share');
     Route::post('lists/import', [ActionsController::class, 'import'])->name('lists.import');
+
+    // With Cargo: a list's products into the basket.
+    Route::post('cart', [ActionsController::class, 'cart'])->name('cart');
 });

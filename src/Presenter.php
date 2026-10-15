@@ -2,8 +2,8 @@
 
 namespace NineteenNinetyFour\Wishlist;
 
+use NineteenNinetyFour\Wishlist\Integrations\Cargo;
 use Statamic\Contracts\Data\Augmentable;
-use Statamic\Facades\Data;
 
 /**
  * Lists and items as tags, JSON and the Control Panel see them.
@@ -54,7 +54,7 @@ class Presenter
 
             $kept = array_map(fn ($value) => is_string($value) ? e($value) : $value, $item->data);
 
-            $rows[] = array_merge($data->toAugmentedArray(), [
+            $rows[] = array_merge($data->toAugmentedArray(), array_filter(['cargo' => app(Cargo::class)->describe($item, $data)]), [
                 'wishlist_item' => [
                     'id' => $item->reference,
                     'added_at' => $item->addedAt,
@@ -122,7 +122,7 @@ class Presenter
         $resolved = [];
 
         foreach ($references as $reference) {
-            if (! $wishlists->allowed($reference) || ! ($data = Data::find($reference)) instanceof Augmentable) {
+            if (! $wishlists->allowed($reference) || ! ($data = Reference::find($reference)) instanceof Augmentable) {
                 continue;
             }
 

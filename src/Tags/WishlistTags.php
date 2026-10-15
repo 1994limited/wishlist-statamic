@@ -4,8 +4,10 @@ namespace NineteenNinetyFour\Wishlist\Tags;
 
 use Illuminate\Support\Facades\Crypt;
 use NineteenNinetyFour\Wishlist\CurrentOwner;
+use NineteenNinetyFour\Wishlist\Integrations\Cargo;
 use NineteenNinetyFour\Wishlist\Owner;
 use NineteenNinetyFour\Wishlist\Presenter;
+use NineteenNinetyFour\Wishlist\Reference;
 use NineteenNinetyFour\Wishlist\ShareCodec;
 use NineteenNinetyFour\Wishlist\Wishlist;
 use NineteenNinetyFour\Wishlist\Wishlists;
@@ -92,7 +94,7 @@ class WishlistTags extends Tags
     public function has(): bool
     {
         $owner = $this->currentOwner();
-        $id = (string) $this->params->get(['id', 'entry']);
+        $id = $this->reference();
 
         return $owner !== null && $id !== '' && $this->wishlists()->has($owner, $id, $this->params->get('list'));
     }
@@ -188,7 +190,7 @@ class WishlistTags extends Tags
      */
     public function toggleAttrs(): string
     {
-        $id = (string) $this->params->get(['id', 'entry']);
+        $id = $this->reference();
         $list = $this->params->get('list');
 
         return collect([
@@ -320,7 +322,7 @@ class WishlistTags extends Tags
 
     protected function itemForm(string $action): string
     {
-        $id = (string) $this->params->get(['id', 'entry']);
+        $id = $this->reference();
         $added = $this->has();
 
         return $this->form("items/{$action}", array_filter([
@@ -369,7 +371,7 @@ class WishlistTags extends Tags
      */
     protected function form(string $action, array $fields, array $attrs = [], array $data = []): string
     {
-        $known = ['id', 'entry', 'list', 'redirect', 'error_redirect', 'key', 'i', 'partial', 'csrf'];
+        $known = ['id', 'entry', 'variant', 'list', 'redirect', 'error_redirect', 'key', 'i', 'partial', 'csrf'];
 
         $html = $this->formOpen(url("!/wishlist/{$action}"), 'POST', $known, $attrs);
 
@@ -385,6 +387,35 @@ class WishlistTags extends Tags
         $html .= $this->isPair ? $this->parse($data) : '';
 
         return $html.$this->formClose();
+    }
+
+    /**
+     * What the tag is about: id="..." (or entry="..."), and with Cargo,
+     * variant="..." for one of a product's variants.
+     */
+    protected function reference(): string
+    {
+        $id = (string) $this->params->get(['id', 'entry']);
+        $variant = $this->params->get('variant');
+
+        return $id === '' ? '' : Reference::make(Reference::base($id), is_scalar($variant) ? (string) $variant : Reference::variant($id));
+    }
+
+    /**
+     * {{ wishlist:add_to_cart }}<button>Add all to basket</button>{{ /wishlist:add_to_cart }}
+     *
+     * With Cargo: a form that puts the list's products in the basket.
+     * Without Cargo, nothing.
+     */
+    public function addToCart(): string
+    {
+        if (! app(Cargo::class)->installed()) {
+            return '';
+        }
+
+        $list = $this->findList();
+
+        return $this->form('cart', array_filter(['list' => $list?->id()]), ['data-wishlist-form' => 'cart']);
     }
 
     protected function findList(): ?Wishlist
