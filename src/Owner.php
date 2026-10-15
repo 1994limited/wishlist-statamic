@@ -27,6 +27,19 @@ final class Owner
         return new self('guest', $token);
     }
 
+    /**
+     * The owner a stored string names, or null when it doesn't name one
+     * (a hand-edited file, say).
+     */
+    public static function tryFromString(?string $owner): ?self
+    {
+        try {
+            return self::fromString((string) $owner);
+        } catch (InvalidArgumentException) {
+            return null;
+        }
+    }
+
     public static function fromString(string $owner): self
     {
         [$type, $id] = array_pad(explode(':', $owner, 2), 2, '');

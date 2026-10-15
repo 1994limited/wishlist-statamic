@@ -4,6 +4,7 @@ namespace NineteenNinetyFour\Wishlist\Http\Controllers;
 
 use Illuminate\Http\Request;
 use NineteenNinetyFour\Wishlist\CurrentOwner;
+use NineteenNinetyFour\Wishlist\Http\ReadsText;
 use NineteenNinetyFour\Wishlist\Item;
 use NineteenNinetyFour\Wishlist\Presenter;
 use NineteenNinetyFour\Wishlist\ShareCodec;
@@ -17,6 +18,8 @@ use Statamic\View\View;
  */
 class SharedController
 {
+    use ReadsText;
+
     public function __construct(
         protected Wishlists $wishlists,
         protected CurrentOwner $owner,
@@ -47,7 +50,7 @@ class SharedController
         $items = $this->presenter->items($list->items());
 
         return [
-            'title' => $list->title(),
+            'title' => e($list->title()),
             'items' => $items,
             'count' => count($items),
             'no_results' => count($items) === 0,
@@ -60,14 +63,15 @@ class SharedController
 
     protected function fromUrl(Request $request): array
     {
-        $references = collect(ShareCodec::decode((string) $request->query('i', ''), (int) config('wishlist.share.max_items', 200)))
+        $references = collect(ShareCodec::decode($this->text($request, 'i', 20000), (int) config('wishlist.share.max_items', 200)))
             ->filter(fn (string $reference) => $this->wishlists->allowed($reference))
             ->values();
 
         $items = $this->presenter->items($references->map(fn (string $reference) => Item::make($reference)));
 
         return [
-            'title' => mb_substr(strip_tags((string) $request->query('t', '')), 0, 100) ?: config('wishlist.default_list_title', 'My Wishlist'),
+            // From the link, so anyone could have written it.
+            'title' => e($this->linkTitle($request) ?? config('wishlist.default_list_title', 'My Wishlist')),
             'items' => $items,
             'count' => count($items),
             'no_results' => count($items) === 0,

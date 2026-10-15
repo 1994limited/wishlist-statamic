@@ -108,12 +108,16 @@ class WishlistsController extends CpController
      */
     protected function owner(Wishlist $list): array
     {
-        $owner = Owner::fromString($list->owner());
-        $user = $owner->toUser();
+        $owner = Owner::tryFromString($list->owner());
+        $user = $owner?->toUser();
 
         return [
-            'type' => $owner->type,
-            'name' => $user ? ($user->name() ?: $user->email()) : ($owner->isGuest() ? __('Guest') : __('Deleted user')),
+            'type' => $owner?->type ?? 'unknown',
+            'name' => $user ? ($user->name() ?: $user->email()) : match (true) {
+                $owner === null => __('Unknown owner'),
+                $owner->isGuest() => __('Guest'),
+                default => __('Deleted user'),
+            },
             'email' => $user?->email(),
             'url' => $user ? $user->editUrl() : null,
         ];

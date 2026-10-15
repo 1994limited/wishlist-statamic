@@ -10,14 +10,18 @@ Route::get('resolve', [ActionsController::class, 'resolve'])->name('resolve');
 Route::get('render', [ActionsController::class, 'render'])->name('render');
 Route::get('wishlist.js', [ActionsController::class, 'script'])->name('script');
 
-Route::post('items/add', [ActionsController::class, 'add'])->name('items.add');
-Route::post('items/remove', [ActionsController::class, 'remove'])->name('items.remove');
-Route::post('items/toggle', [ActionsController::class, 'toggle'])->name('items.toggle');
+// Changes are rate limited per visitor (wishlist.throttle), so a script
+// can't fill the disk or database with lists.
+Route::middleware(array_filter([config('wishlist.throttle') ? 'throttle:'.config('wishlist.throttle') : null]))->group(function () {
+    Route::post('items/add', [ActionsController::class, 'add'])->name('items.add');
+    Route::post('items/remove', [ActionsController::class, 'remove'])->name('items.remove');
+    Route::post('items/toggle', [ActionsController::class, 'toggle'])->name('items.toggle');
 
-Route::post('lists/create', [ActionsController::class, 'createList'])->name('lists.create');
-Route::post('lists/rename', [ActionsController::class, 'renameList'])->name('lists.rename');
-Route::post('lists/delete', [ActionsController::class, 'deleteList'])->name('lists.delete');
-Route::post('lists/clear', [ActionsController::class, 'clearList'])->name('lists.clear');
-Route::post('lists/default', [ActionsController::class, 'defaultList'])->name('lists.default');
-Route::post('lists/share', [ActionsController::class, 'shareList'])->name('lists.share');
-Route::post('lists/import', [ActionsController::class, 'import'])->name('lists.import');
+    Route::post('lists/create', [ActionsController::class, 'createList'])->name('lists.create');
+    Route::post('lists/rename', [ActionsController::class, 'renameList'])->name('lists.rename');
+    Route::post('lists/delete', [ActionsController::class, 'deleteList'])->name('lists.delete');
+    Route::post('lists/clear', [ActionsController::class, 'clearList'])->name('lists.clear');
+    Route::post('lists/default', [ActionsController::class, 'defaultList'])->name('lists.default');
+    Route::post('lists/share', [ActionsController::class, 'shareList'])->name('lists.share');
+    Route::post('lists/import', [ActionsController::class, 'import'])->name('lists.import');
+});

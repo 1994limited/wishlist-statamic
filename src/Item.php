@@ -27,10 +27,25 @@ final class Item
 
     public static function fromArray(array $item): self
     {
+        return self::tryFromArray($item) ?? throw new \InvalidArgumentException('A wishlist item needs an id.');
+    }
+
+    /**
+     * An item from what was stored, or null when it has no usable
+     * reference. Values kept with it must be plain text or numbers.
+     */
+    public static function tryFromArray(mixed $item): ?self
+    {
+        if (! is_array($item) || ! is_scalar($item['id'] ?? null) || (string) $item['id'] === '') {
+            return null;
+        }
+
+        $data = is_array($item['data'] ?? null) ? array_filter($item['data'], 'is_scalar') : [];
+
         return new self(
             (string) $item['id'],
-            isset($item['added_at']) ? CarbonImmutable::parse($item['added_at']) : CarbonImmutable::now(),
-            (array) ($item['data'] ?? []),
+            Wishlist::date($item['added_at'] ?? null) ?? CarbonImmutable::now(),
+            $data,
         );
     }
 

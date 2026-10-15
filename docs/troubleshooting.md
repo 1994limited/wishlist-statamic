@@ -27,6 +27,10 @@ That's expected: the server can't see lists kept in a browser. Use the `data-wis
 
 With static caching, what tags print is cached for every visitor. Use `data-wishlist-count`, `data-wishlist-when` and `{{ wishlist:render }}`, which the script corrects once the page loads, or wrap the tags in `{{ nocache }}`.
 
+## 429 errors
+
+A visitor made more changes than `throttle` allows (60 a minute by default). It resets after the minute. Raise it in [the config](configuration.md#what-can-be-saved) if your pages save many things at once.
+
 ## 419 errors
 
 The CSRF token expired, usually on a page left open a long time or cached. The script fetches a fresh token when the page loads. If you call the [HTTP API](http-api.md) yourself, get a token from `/!/wishlist/state` first.

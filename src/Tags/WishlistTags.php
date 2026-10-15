@@ -145,7 +145,10 @@ class WishlistTags extends Tags
      */
     public function success(): ?string
     {
-        return session('wishlist_success');
+        $message = session('wishlist_success');
+
+        // Messages name the list, and visitors write list titles.
+        return is_string($message) ? e($message) : null;
     }
 
     /**
@@ -153,7 +156,9 @@ class WishlistTags extends Tags
      */
     public function error(): ?string
     {
-        return session('errors')?->getBag('wishlist')->first('wishlist') ?: null;
+        $message = session('errors')?->getBag('wishlist')->first('wishlist');
+
+        return $message ? e($message) : null;
     }
 
     /**
@@ -287,6 +292,7 @@ class WishlistTags extends Tags
             'storageKey' => config('wishlist.drivers.browser.storage_key', 'statamic.wishlist'),
             'defaultTitle' => config('wishlist.default_list_title', 'My Wishlist'),
             'limits' => config('wishlist.limits'),
+            'itemFields' => array_values((array) config('wishlist.item_fields', [])),
             'maxShareItems' => (int) config('wishlist.share.max_items', 200),
         ];
 

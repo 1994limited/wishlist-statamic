@@ -30,6 +30,6 @@ class WishlistsStore extends BasicStore
             $data = [];
         }
 
-        return Wishlist::fromArray(pathinfo($path, PATHINFO_FILENAME), $data ?? [])->initialPath($path);
+        return Wishlist::fromArray(pathinfo($path, PATHINFO_FILENAME), is_array($data) ? $data : [])->initialPath($path);
     }
 }

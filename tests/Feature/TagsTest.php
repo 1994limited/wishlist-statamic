@@ -2,6 +2,7 @@
 
 namespace NineteenNinetyFour\Wishlist\Tests\Feature;
 
+use Illuminate\Support\Facades\Crypt;
 use NineteenNinetyFour\Wishlist\Item;
 use NineteenNinetyFour\Wishlist\Owner;
 use NineteenNinetyFour\Wishlist\Tests\TestCase;
@@ -154,6 +155,28 @@ class TagsTest extends TestCase
         $this->assertStringNotContainsString('name="list"', $create);
         $this->assertStringNotContainsString('the-page-entry-id', $delete);
         $this->assertStringContainsString('<input type="hidden" name="list" value="'.$this->gifts->id().'">', $this->antlers('{{ wishlist:delete_list list="'.$this->gifts->id().'" }}{{ /wishlist:delete_list }}', $page));
+    }
+
+    #[Test]
+    public function the_script_redraws_the_visitors_own_list_with_its_notes(): void
+    {
+        file_put_contents(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html', '{{ title }}: {{ items }}[{{ title }}{{ if wishlist_item:notes }} ({{ wishlist_item:notes }}){{ /if }}]{{ /items }}');
+
+        try {
+            $view = Crypt::encryptString('partials/saved');
+
+            $this->get('/!/wishlist/render?view='.urlencode($view).'&list='.$this->default->id())
+                ->assertOk()
+                ->assertSee('My Wishlist: [Linen Shirt (Size M)]', false);
+
+            // Someone else's list isn't theirs to draw: they get their own default.
+            $this->actingAs($this->user('other@example.com'));
+            $this->get('/!/wishlist/render?view='.urlencode($view).'&list='.$this->gifts->id())
+                ->assertOk()
+                ->assertDontSee('Gifts');
+        } finally {
+            unlink(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html');
+        }
     }
 
     #[Test]

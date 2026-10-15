@@ -39,6 +39,7 @@ These don't apply to the browser driver, where lists belong to whoever is using 
 | `item_fields` | `['notes', 'quantity']` | Values a visitor can keep with an item. Anything else sent with an item is dropped. |
 | `limits.lists` | `20` | The most lists one visitor can keep. |
 | `limits.items` | `500` | The most items one list can hold. |
+| `throttle` | `60,1` | How many changes (saves, new lists…) one visitor can make: attempts, then minutes, as for Laravel's `throttle` middleware. Over the limit they get a 429 until it resets. Reading lists isn't limited. `null` turns it off. |
 | `default_list_title` | `My Wishlist` | The title of a visitor's first list, made when they first save something. |
 
 Only published entries can be saved. Entries unpublished or deleted later drop out of lists when they're shown.

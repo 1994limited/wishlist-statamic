@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use NineteenNinetyFour\Wishlist\CurrentOwner;
+use NineteenNinetyFour\Wishlist\Http\ReadsText;
 use NineteenNinetyFour\Wishlist\Item;
 use NineteenNinetyFour\Wishlist\Owner;
 use NineteenNinetyFour\Wishlist\Presenter;
@@ -27,6 +28,8 @@ use Statamic\View\View;
  */
 class ActionsController
 {
+    use ReadsText;
+
     public function __construct(
         protected Wishlists $wishlists,
         protected CurrentOwner $owner,
@@ -68,23 +71,40 @@ class ActionsController
     public function render(Request $request): Response
     {
         try {
-            $partial = Crypt::decryptString((string) $request->query('view'));
+            $partial = Crypt::decryptString((string) $this->text($request, 'view', 4000));
         } catch (DecryptException) {
             abort(400);
         }
 
+        // With the file and database drivers, the visitor's own list (so
+        // the notes and quantities kept with each item come too). With the
+        // browser driver, the items the script sent.
+        $owner = $this->wishlists->storesOnServer() ? $this->owner->get() : null;
+        $list = $owner ? $this->wishlists->find($owner, $this->text($request, 'list', 64)) : null;
+
+        $data = $list ? $this->presenter->list($list) : $this->linkData($request);
+
+        $html = app(View::class)->template($partial)->with($data)->render();
+
+        return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
+    }
+
+    /**
+     * A list drawn from the items in a link (the browser driver's).
+     */
+    protected function linkData(Request $request): array
+    {
         $items = $this->presenter->items(collect($this->references($request))
             ->filter(fn (string $reference) => $this->wishlists->allowed($reference))
             ->map(fn (string $reference) => Item::make($reference)));
 
-        $html = app(View::class)->template($partial)->with([
+        return [
             'items' => $items,
             'count' => count($items),
             'no_results' => count($items) === 0,
-            'title' => $request->query('t'),
-        ])->render();
-
-        return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
+            // From the link, so anyone could have written it.
+            'title' => e($this->linkTitle($request) ?? config('wishlist.default_list_title', 'My Wishlist')),
+        ];
     }
 
     public function script(): Response
@@ -99,7 +119,7 @@ class ActionsController
     public function add(Request $request)
     {
         return $this->act($request, function (Owner $owner) use ($request) {
-            $list = $this->wishlists->add($owner, $this->reference($request), $request->input('list'), $this->itemData($request));
+            $list = $this->wishlists->add($owner, $this->reference($request), $this->text($request, 'list', 64), $this->itemData($request));
 
             return [$list, __('wishlist::messages.added', ['list' => $list->title()]), ['added' => true]];
         });
@@ -108,7 +128,7 @@ class ActionsController
     public function remove(Request $request)
     {
         return $this->act($request, function (Owner $owner) use ($request) {
-            $list = $this->wishlists->remove($owner, $this->reference($request), $request->input('list'));
+            $list = $this->wishlists->remove($owner, $this->reference($request), $this->text($request, 'list', 64));
 
             return [$list, __('wishlist::messages.removed', ['list' => $list->title()]), ['added' => false]];
         });
@@ -117,7 +137,7 @@ class ActionsController
     public function toggle(Request $request)
     {
         return $this->act($request, function (Owner $owner) use ($request) {
-            [$list, $added] = $this->wishlists->toggle($owner, $this->reference($request), $request->input('list'), $this->itemData($request));
+            [$list, $added] = $this->wishlists->toggle($owner, $this->reference($request), $this->text($request, 'list', 64), $this->itemData($request));
 
             return [$list, __($added ? 'wishlist::messages.added' : 'wishlist::messages.removed', ['list' => $list->title()]), ['added' => $added]];
         });
@@ -126,7 +146,7 @@ class ActionsController
     public function createList(Request $request)
     {
         return $this->act($request, function (Owner $owner) use ($request) {
-            $list = $this->wishlists->create($owner, $request->input('title'));
+            $list = $this->wishlists->create($owner, $this->text($request, 'title'));
 
             return [$list, __('wishlist::messages.created', ['list' => $list->title()])];
         });
@@ -135,7 +155,7 @@ class ActionsController
     public function renameList(Request $request)
     {
         return $this->act($request, function (Owner $owner) use ($request) {
-            $list = $this->wishlists->rename($owner, $request->input('list'), (string) $request->input('title'));
+            $list = $this->wishlists->rename($owner, $this->text($request, 'list', 64), (string) $this->text($request, 'title'));
 
             return [$list, __('wishlist::messages.renamed', ['list' => $list->title()])];
         });
@@ -144,7 +164,7 @@ class ActionsController
     public function deleteList(Request $request)
     {
         return $this->act($request, function (Owner $owner) use ($request) {
-            $list = $this->wishlists->delete($owner, $request->input('list'));
+            $list = $this->wishlists->delete($owner, $this->text($request, 'list', 64));
 
             return [null, __('wishlist::messages.deleted', ['list' => $list->title()])];
         });
@@ -153,7 +173,7 @@ class ActionsController
     public function clearList(Request $request)
     {
         return $this->act($request, function (Owner $owner) use ($request) {
-            $list = $this->wishlists->clear($owner, $request->input('list'));
+            $list = $this->wishlists->clear($owner, $this->text($request, 'list', 64));
 
             return [$list, __('wishlist::messages.cleared', ['list' => $list->title()])];
         });
@@ -162,7 +182,7 @@ class ActionsController
     public function defaultList(Request $request)
     {
         return $this->act($request, function (Owner $owner) use ($request) {
-            $list = $this->wishlists->makeDefault($owner, (string) $request->input('list'));
+            $list = $this->wishlists->makeDefault($owner, (string) $this->text($request, 'list', 64));
 
             return [$list, null];
         });
@@ -171,7 +191,7 @@ class ActionsController
     public function shareList(Request $request)
     {
         return $this->act($request, function (Owner $owner) use ($request) {
-            $list = $this->wishlists->regenerateShareKey($owner, $request->input('list'));
+            $list = $this->wishlists->regenerateShareKey($owner, $this->text($request, 'list', 64));
 
             return [$list, __('wishlist::messages.share_reset', ['list' => $list->title()])];
         });
@@ -184,11 +204,13 @@ class ActionsController
     public function import(Request $request)
     {
         return $this->act($request, function (Owner $owner) use ($request) {
-            $references = $request->filled('key')
-                ? ($this->wishlists->repository()->findByShareKey((string) $request->input('key'))?->items()->map->reference->all() ?? throw WishlistException::listNotFound())
+            $key = $this->text($request, 'key', 64);
+
+            $references = $key !== null
+                ? ($this->wishlists->repository()->findByShareKey($key)?->items()->map->reference->all() ?? throw WishlistException::listNotFound())
                 : $this->references($request);
 
-            [$list, $added] = $this->wishlists->import($owner, $references, $request->input('list'));
+            [$list, $added] = $this->wishlists->import($owner, $references, $this->text($request, 'list', 64));
 
             return [$list, __('wishlist::messages.imported', ['count' => $added, 'list' => $list->title()]), ['imported' => $added]];
         });
@@ -240,7 +262,7 @@ class ActionsController
      */
     protected function back(Request $request, string $field): RedirectResponse
     {
-        $to = (string) $request->input($field, '');
+        $to = (string) $this->text($request, $field);
 
         $local = $to !== '' && (str_starts_with($to, '/') && ! str_starts_with($to, '//')
             || parse_url($to, PHP_URL_HOST) === $request->getHost());
@@ -250,9 +272,9 @@ class ActionsController
 
     protected function reference(Request $request): string
     {
-        $reference = $request->input('id');
+        $reference = $this->text($request, 'id', 255);
 
-        if (! is_string($reference) || $reference === '') {
+        if ($reference === null) {
             throw new WishlistException(__('wishlist::messages.not_allowed'));
         }
 
@@ -267,7 +289,9 @@ class ActionsController
     {
         $fields = (array) config('wishlist.item_fields', []);
 
-        return array_merge($request->only($fields), (array) $request->input('data', []));
+        $data = $request->input('data', []);
+
+        return array_merge($request->only($fields), is_array($data) ? $data : []);
     }
 
     /**
@@ -277,12 +301,12 @@ class ActionsController
     {
         $limit = (int) config('wishlist.share.max_items', 200);
 
-        if ($request->has('ids')) {
-            return collect((array) $request->input('ids'))
+        if (is_array($request->input('ids'))) {
+            return collect($request->input('ids'))
                 ->filter(fn ($id) => is_string($id) && $id !== '')
                 ->unique()->take($limit)->values()->all();
         }
 
-        return ShareCodec::decode((string) $request->input('i', ''), $limit);
+        return ShareCodec::decode($this->text($request, 'i', 20000), $limit);
     }
 }

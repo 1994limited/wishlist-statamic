@@ -4,6 +4,8 @@ Every tag is `{{ wishlist:… }}`. Wherever a tag takes `list="…"`, it means a
 
 **With the browser driver** the server can't see anyone's lists. The tags that read lists (`wishlist`, `list`, `lists`, `items`, `has`, `count`, `share_url`) read as empty, and the script fills in the page instead. See [Templates](templates.md) for the patterns that work with every driver.
 
+**Visitors' text is already escaped.** List titles, notes and other item fields are written by visitors, so the tags give them HTML-escaped, safe to print in text or inside an attribute. Don't add `| entities` or `| sanitize` to them (you'd see `&amp;`), and don't print them with `| raw`-style modifiers that undo it.
+
 ## Reading lists
 
 ### `{{ wishlist }}` / `{{ wishlist:list }}`

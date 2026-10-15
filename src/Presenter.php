@@ -24,7 +24,9 @@ class Presenter
             // What list forms inside a {{ wishlist:lists }} loop act on; "id"
             // could be the page's own ID.
             'wishlist_list_id' => $list->id(),
-            'title' => $list->title(),
+            // Visitors write titles and notes, so they're escaped for the
+            // page, in text or in an attribute alike.
+            'title' => e($list->title()),
             'is_default' => $list->isDefault(),
             'count' => count($items),
             'items_count' => count($items),
@@ -49,13 +51,15 @@ class Presenter
         foreach ($this->available($items) as $item) {
             $data = $item->resolve();
 
+            $kept = array_map(fn ($value) => is_string($value) ? e($value) : $value, $item->data);
+
             $rows[] = array_merge($data->toAugmentedArray(), [
                 'wishlist_item' => [
                     'id' => $item->reference,
                     'added_at' => $item->addedAt,
-                    'notes' => $item->data['notes'] ?? null,
-                    'quantity' => $item->data['quantity'] ?? null,
-                ] + $item->data,
+                    'notes' => $kept['notes'] ?? null,
+                    'quantity' => $kept['quantity'] ?? null,
+                ] + $kept,
             ]);
         }
 

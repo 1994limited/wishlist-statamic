@@ -30,7 +30,7 @@ class PruneGuestLists extends Command
 
         $cutoff = now()->subDays((int) $this->option('days'));
 
-        $stale = $repository->all()->filter(fn (Wishlist $list) => Owner::fromString($list->owner())->isGuest()
+        $stale = $repository->all()->filter(fn (Wishlist $list) => Owner::tryFromString($list->owner())?->isGuest()
             && ($list->updatedAt() === null || $list->updatedAt()->lt($cutoff)));
 
         $stale->each(fn (Wishlist $list) => $repository->delete($list));

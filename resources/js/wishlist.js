@@ -52,6 +52,7 @@
             storageKey: 'statamic.wishlist',
             defaultTitle: 'My Wishlist',
             limits: { lists: 20, items: 500 },
+            itemFields: ['notes', 'quantity'],
             maxShareItems: 200,
         },
         window.WishlistConfig || {}
@@ -153,14 +154,71 @@
     }
 
     BrowserStore.prototype.load = function () {
+        var stored = null;
         try {
-            var stored = JSON.parse(localStorage.getItem(config.storageKey) || 'null');
-            this.state = stored && Array.isArray(stored.lists) ? stored : { lists: [] };
+            stored = JSON.parse(localStorage.getItem(config.storageKey) || 'null');
         } catch (e) {
-            this.state = { lists: [] };
+            stored = null;
         }
+        this.state = { lists: cleanLists(stored && stored.lists) };
         return Promise.resolve(this.state.lists);
     };
+
+    /*
+     * What's in localStorage can be anything: an older version's lists, a
+     * browser extension's, or someone's edits. Keep what's well formed,
+     * within the limits, and drop the rest.
+     */
+    function isText(value) {
+        return (typeof value === 'string' && value !== '') || (typeof value === 'number' && isFinite(value));
+    }
+
+    function cleanData(data) {
+        var clean = {};
+        var fields = config.itemFields || [];
+        if (!data || typeof data !== 'object' || Array.isArray(data)) return clean;
+        fields.forEach(function (field) {
+            if (!Object.prototype.hasOwnProperty.call(data, field) || !isText(data[field])) return;
+            clean[field] = field === 'quantity'
+                ? Math.max(1, Math.min(9999, parseInt(data[field], 10) || 1))
+                : String(data[field]).replace(/<[^>]*>/g, '').trim().slice(0, 1000);
+            if (clean[field] === '') delete clean[field];
+        });
+        return clean;
+    }
+
+    function cleanLists(lists) {
+        if (!Array.isArray(lists)) return [];
+        var seen = {};
+        var clean = [];
+        lists.forEach(function (l) {
+            if (!l || typeof l !== 'object' || !isText(l.id) || seen[l.id] || clean.length >= config.limits.lists) return;
+            seen[l.id] = true;
+            var ids = {};
+            var items = [];
+            (Array.isArray(l.items) ? l.items : []).forEach(function (i) {
+                if (!i || typeof i !== 'object' || !isText(i.id) || String(i.id).length > 255 || ids[i.id] || items.length >= config.limits.items) return;
+                ids[i.id] = true;
+                var item = { id: String(i.id), added_at: typeof i.added_at === 'string' && !isNaN(Date.parse(i.added_at)) ? i.added_at : new Date().toISOString() };
+                var data = cleanData(i.data);
+                if (Object.keys(data).length) item.data = data;
+                items.push(item);
+            });
+            clean.push({
+                id: String(l.id),
+                title: isText(l.title) ? String(l.title).replace(/<[^>]*>/g, '').trim().slice(0, 100) || config.defaultTitle : config.defaultTitle,
+                default: l.default === true,
+                items: items,
+                created_at: typeof l.created_at === 'string' ? l.created_at : new Date().toISOString(),
+            });
+        });
+        // Exactly one default, when there are lists.
+        var defaults = clean.filter(function (l) { return l.default; });
+        if (clean.length && defaults.length !== 1) {
+            clean.forEach(function (l, index) { l.default = defaults.length ? l === defaults[0] : index === 0; });
+        }
+        return clean;
+    }
 
     BrowserStore.prototype.write = function () {
         try {
@@ -200,13 +258,15 @@
 
     BrowserStore.prototype.add = function (p) {
         var list = this.findOrCreate(p.list);
-        var existing = list.items.filter(function (i) { return i.id === p.id; })[0];
+        if (!isText(p.id) || String(p.id).length > 255) fail("That can't be added to a wishlist.");
+        var data = cleanData(p.data);
+        var existing = list.items.filter(function (i) { return i.id === String(p.id); })[0];
         if (existing) {
-            if (p.data) existing.data = Object.assign(existing.data || {}, p.data);
+            if (Object.keys(data).length) existing.data = Object.assign(existing.data || {}, data);
         } else {
             if (list.items.length >= config.limits.items) fail('A wishlist can hold up to ' + config.limits.items + ' items.');
             var item = { id: String(p.id), added_at: new Date().toISOString() };
-            if (p.data && Object.keys(p.data).length) item.data = p.data;
+            if (Object.keys(data).length) item.data = data;
             list.items.push(item);
         }
         return { added: true, list: list };
@@ -236,7 +296,7 @@
         if (this.state.lists.length >= config.limits.lists) fail('You can keep up to ' + config.limits.lists + ' wishlists.');
         var list = {
             id: uuid(),
-            title: (p.title || '').trim().slice(0, 100) || config.defaultTitle,
+            title: (isText(p.title) ? String(p.title) : '').replace(/<[^>]*>/g, '').trim().slice(0, 100) || config.defaultTitle,
             default: this.state.lists.length === 0,
             items: [],
             created_at: new Date().toISOString(),
@@ -248,7 +308,7 @@
     BrowserStore.prototype.rename = function (p) {
         var list = this.find(p.list);
         if (!list) fail('That wishlist could not be found.');
-        list.title = (p.title || '').trim().slice(0, 100) || config.defaultTitle;
+        list.title = (isText(p.title) ? String(p.title) : '').replace(/<[^>]*>/g, '').trim().slice(0, 100) || config.defaultTitle;
         return { list: list };
     };
 
@@ -270,7 +330,9 @@
     BrowserStore.prototype.import = function (p) {
         var list = this.findOrCreate(p.list);
         var added = 0;
-        (p.ids || []).forEach(function (id) {
+        (Array.isArray(p.ids) ? p.ids : []).forEach(function (id) {
+            if (!isText(id) || String(id).length > 255) return;
+            id = String(id);
             if (list.items.length >= config.limits.items) return;
             if (list.items.some(function (i) { return i.id === id; })) return;
             list.items.push({ id: id, added_at: new Date().toISOString() });
@@ -456,7 +518,9 @@
         },
         /** Add references (or an encoded string) to a list, skipping repeats. */
         import: function (references, listId) {
-            var ids = typeof references === 'string' ? decode(references, config.maxShareItems) : references.map(String);
+            var ids = typeof references === 'string'
+                ? decode(references, config.maxShareItems)
+                : (Array.isArray(references) ? references : []).filter(isText).map(String);
             return run('import', { ids: ids, list: listId });
         },
         /** Each reference's fields (wishlist.resolve_fields) from the server. */
@@ -554,7 +618,10 @@
             config.endpoint +
             '/render?view=' + encodeURIComponent(container.getAttribute('data-wishlist-render')) +
             '&i=' + encode(references) +
-            (l ? '&t=' + encodeURIComponent(l.title) : '')
+            (l ? '&t=' + encodeURIComponent(l.title) : '') +
+            // The server drivers draw the visitor's own list, notes and all;
+            // the items in the URL also make it a new address when they change.
+            (l && config.driver !== 'browser' ? '&list=' + encodeURIComponent(l.id) : '')
         );
     }
 
@@ -578,7 +645,7 @@
         var data = new FormData(form);
         var payload = { data: {} };
         data.forEach(function (value, name) {
-            if (name === '_token' || name.charAt(0) === '_') return;
+            if (name === '_token' || name.charAt(0) === '_' || /(^|\[)(__proto__|constructor|prototype)\]?$/.test(name)) return;
             if (name === 'id' || name === 'list' || name === 'title' || name === 'key' || name === 'i') payload[name] = value;
             else if (name.indexOf('data[') === 0) payload.data[name.slice(5, -1)] = value;
             else payload.data[name] = value;

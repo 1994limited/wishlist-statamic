@@ -86,6 +86,11 @@ return [
 
     'default_list_title' => 'My Wishlist',
 
+    // How many changes (saves, new lists…) one visitor can make, as
+    // "attempts,minutes" for Laravel's throttle middleware. Reading lists
+    // isn't limited. Set to null to turn it off.
+    'throttle' => '60,1',
+
     /*
     |--------------------------------------------------------------------------
     | Shared lists

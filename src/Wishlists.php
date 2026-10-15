@@ -330,7 +330,7 @@ class Wishlists
     public function save(Wishlist $list): void
     {
         $this->repository->save($list->touch());
-        $this->forget(Owner::fromString($list->owner()));
+        $this->forget(Owner::tryFromString($list->owner()));
 
         WishlistSaved::dispatch($list);
     }

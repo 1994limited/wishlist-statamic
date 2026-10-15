@@ -45,7 +45,7 @@ The fields in [`resolve_fields`](configuration.md#the-script) (title and url by 
 
 ### `GET /!/wishlist/render`
 
-HTML: a partial rendered with the given entries (`i=…`, and a title as `t=…`). `view` must be the signed value from a `{{ wishlist:render }}` container's `data-wishlist-render`. Anything else answers `400`.
+HTML: a partial rendered with a list. With the file and database drivers, pass the visitor's list as `list=…` to draw it as stored, notes and all (someone else's list isn't drawn). Otherwise it's drawn from the given entries (`i=…`, and a title as `t=…`, escaped). `view` must be the signed value from a `{{ wishlist:render }}` container's `data-wishlist-render`. Anything else answers `400`.
 
 ## Changing
 
@@ -87,6 +87,9 @@ and on failure a `4xx` with `{ "success": false, "message": "…" }`. The messag
 | `419` | | The CSRF token is missing or expired. Fetch `state` again. |
 | `422` | That can't be added to a wishlist. | The entry isn't published, isn't in an allowed collection, or doesn't exist. |
 | `422` | A wishlist can hold up to 500 items. / You can keep up to 20 wishlists. | A [limit](configuration.md#what-can-be-saved). |
+| `429` | Too Many Attempts. | Over the [rate limit](configuration.md#what-can-be-saved) for changes. |
+
+Fields are read as plain text. A field sent as anything else (an array, say) counts as missing.
 
 ## Example
 

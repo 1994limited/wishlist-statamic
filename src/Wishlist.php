@@ -48,23 +48,53 @@ class Wishlist
     /**
      * Build a list from what a driver stored, in the shape of fileData().
      */
+    /**
+     * Build a list from what a driver stored, in the shape of fileData().
+     * A file can be edited by hand, so anything malformed is read as
+     * empty or left out rather than breaking every list.
+     */
     public static function fromArray(string $id, array $data): static
     {
+        $text = fn ($value) => is_scalar($value) ? (string) $value : '';
+
         $wishlist = new static;
         $wishlist->id = $id;
-        $wishlist->owner = (string) ($data['owner'] ?? '');
-        $wishlist->title = (string) ($data['title'] ?? config('wishlist.default_list_title', 'My Wishlist'));
-        $wishlist->shareKey = (string) ($data['share_key'] ?? static::newShareKey());
-        $wishlist->default = (bool) ($data['default'] ?? false);
-        $wishlist->createdAt = isset($data['created_at']) ? CarbonImmutable::parse($data['created_at']) : null;
-        $wishlist->updatedAt = isset($data['updated_at']) ? CarbonImmutable::parse($data['updated_at']) : null;
+        $wishlist->owner = $text($data['owner'] ?? '');
+        $wishlist->title = $text($data['title'] ?? '') ?: config('wishlist.default_list_title', 'My Wishlist');
+        $wishlist->shareKey = $text($data['share_key'] ?? '') ?: static::newShareKey();
+        $wishlist->default = filter_var($data['default'] ?? false, FILTER_VALIDATE_BOOL);
+        $wishlist->createdAt = static::date($data['created_at'] ?? null);
+        $wishlist->updatedAt = static::date($data['updated_at'] ?? null);
 
-        foreach ($data['items'] ?? [] as $item) {
-            $item = $item instanceof Item ? $item : Item::fromArray($item);
-            $wishlist->items[$item->reference] = $item;
+        foreach (is_iterable($data['items'] ?? null) ? $data['items'] : [] as $item) {
+            $item = $item instanceof Item ? $item : Item::tryFromArray($item);
+
+            if ($item) {
+                $wishlist->items[$item->reference] = $item;
+            }
         }
 
         return $wishlist;
+    }
+
+    /**
+     * A stored date, or null when there isn't one that can be read.
+     */
+    public static function date(mixed $value): ?CarbonImmutable
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return CarbonImmutable::instance($value);
+        }
+
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        try {
+            return CarbonImmutable::parse($value);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public static function newShareKey(): string
