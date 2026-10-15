@@ -47,10 +47,10 @@ The header count, messages for visitors without JavaScript, and the script:
 </header>
 
 @if ($message = Statamic::tag('wishlist:success')->fetch())
-    <p class="notice">{{ $message }}</p>
+    <p class="notice">{!! $message !!}</p>
 @endif
 @if ($message = Statamic::tag('wishlist:error')->fetch())
-    <p class="notice notice--error">{{ $message }}</p>
+    <p class="notice notice--error">{!! $message !!}</p>
 @endif
 
 @yield('content')
@@ -246,7 +246,7 @@ The partial:
 
 ```blade
 {{-- resources/views/partials/wishlist.blade.php --}}
-<h2>{{ $title }} <small>({{ $count }})</small></h2>
+<h2>{!! $title !!} <small>({{ $count }})</small></h2>
 
 @if ($no_results)
     <p>Nothing saved yet. <a href="/products">Have a look around.</a></p>
@@ -255,8 +255,8 @@ The partial:
         @foreach ($items as $item)
             <li class="card">
                 <a href="{{ $item['url'] }}">{{ $item['title'] }}</a>
-                @if ($item['wishlist_item']['quantity'] ?? null)<span>× {{ $item['wishlist_item']['quantity'] }}</span>@endif
-                @if ($item['wishlist_item']['notes'] ?? null)<p>{{ $item['wishlist_item']['notes'] }}</p>@endif
+                @if ($item['wishlist_item']['quantity'] ?? null)<span>× {!! $item['wishlist_item']['quantity'] !!}</span>@endif
+                @if ($item['wishlist_item']['notes'] ?? null)<p>{!! $item['wishlist_item']['notes'] !!}</p>@endif
                 <small>Saved {{ \Carbon\Carbon::parse($item['wishlist_item']['added_at'])->format('j M') }}</small>
                 <button {!! Statamic::tag('wishlist:toggle_attrs')->param('id', $item['id'])->fetch() !!}>Remove</button>
             </li>
@@ -325,7 +325,7 @@ form[data-wishlist-error]::after { content: attr(data-wishlist-error); display: 
 
 @section('content')
 <p class="eyebrow">Shared wishlist</p>
-<h1>{{ $title }}</h1>
+<h1>{!! $title !!}</h1>
 
 @if ($no_results)
     <p>This wishlist is empty, or what was on it is no longer available.</p>
@@ -334,7 +334,7 @@ form[data-wishlist-error]::after { content: attr(data-wishlist-error); display: 
         @foreach ($items as $item)
             <li class="card">
                 <a href="{{ $item['url'] }}">{{ $item['title'] }}</a>
-                @if ($item['wishlist_item']['notes'] ?? null)<p>{{ $item['wishlist_item']['notes'] }}</p>@endif
+                @if ($item['wishlist_item']['notes'] ?? null)<p>{!! $item['wishlist_item']['notes'] !!}</p>@endif
                 <s:wishlist:toggle :id="$item['id']">
                     <button type="submit">
                         <span data-wishlist-when="not-added">♡ Save</span>

@@ -73,7 +73,7 @@ With the browser driver, build those links in JavaScript from `Wishlist.shareUrl
 
 The link opens `wishlist/shared` (set by `share.route`), rendered with the addon's template inside your site's `layout`. The page sends `X-Robots-Tag: noindex`, so shared lists stay out of search results.
 
-**With a Blade layout:** the page arrives in your layout as `$template_content`, as Antlers templates do. If your layout uses `@yield('content')`, add `{!! $template_content ?? '' !!}` beside it, or make the shared page a Blade view that `@extends` your layout and set `share.template` to it. There's a Blade version of the whole page in [Examples](examples.md).
+**With a Blade layout:** the page arrives in your layout as `$template_content`, as Antlers templates do. If your layout uses `@yield('content')`, add `{!! $template_content ?? '' !!}` beside it (it's the page Statamic has already rendered, so it's printed as it is), or make the shared page a Blade view that `@extends` your layout and set `share.template` to it. There's a Blade version of the whole page in [Examples](examples.md).
 
 To make it your own, publish the template:
 
@@ -123,12 +123,12 @@ A starting point:
 <summary>Blade</summary>
 
 ```blade
-<h1>{{ $title }}</h1>
+<h1>{!! $title !!}</h1>
 <p>{{ $count }} {{ $count == 1 ? 'item' : 'items' }}</p>
 
 @foreach ($items as $item)
     <a href="{{ $item['url'] }}">{{ $item['title'] }}</a>
-    @if ($item['wishlist_item']['notes'] ?? null)<p>{{ $item['wishlist_item']['notes'] }}</p>@endif
+    @if ($item['wishlist_item']['notes'] ?? null)<p>{!! $item['wishlist_item']['notes'] !!}</p>@endif
 @endforeach
 
 @unless ($is_owner)

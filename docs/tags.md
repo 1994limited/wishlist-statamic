@@ -24,7 +24,7 @@ One list, as a pair. The default list, or `list="id"`.
 
 ```blade
 <s:wishlist>
-    {{ $title }} – {{ $count }} items
+    {!! $title !!} – {{ $count }} items
     @foreach ($items as $item){{ $item['title'] }}@endforeach
 </s:wishlist>
 ```
@@ -57,7 +57,7 @@ Each of the visitor's lists, the default first, with the same variables as above
 
 ```blade
 @forelse (Statamic::tag('wishlist:lists')->fetch() as $list)
-    <a href="#{{ $list['id'] }}">{{ $list['title'] }} ({{ $list['count'] }})</a>
+    <a href="#{{ $list['id'] }}">{!! $list['title'] !!} ({{ $list['count'] }})</a>
 @empty
     No lists yet.
 @endforelse

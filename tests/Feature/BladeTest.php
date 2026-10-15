@@ -189,4 +189,49 @@ class BladeTest extends TestCase
 
         $this->assertSame(2, substr_count($html, 'data-wishlist-id="'.self::B.'"'));
     }
+
+    #[Test]
+    public function visitors_text_is_escaped_once_in_the_documented_patterns(): void
+    {
+        $title = 'Books & Gifts <3 "x"';
+        $note = 'For Priya <3 & "co"';
+        $this->gifts->setTitle($title)->add(Item::make(self::B, ['notes' => $note]));
+        $this->wishlists()->save($this->gifts);
+
+        $list = '<s:wishlist :list="$list"><h2>{!! $title !!}</h2>@foreach ($items as $item)<a href="{{ $item[\'url\'] }}">{{ $item[\'title\'] }}</a><small>{!! $item[\'wishlist_item\'][\'notes\'] ?? \'\' !!}</small>@endforeach</s:wishlist>';
+        $html = $this->renderBlade($list, ['list' => $this->gifts->id()]);
+
+        $this->assertStringContainsString('<h2>Books &amp; Gifts &lt;3 &quot;x&quot;</h2>', $html);
+        $this->assertStringContainsString('<small>For Priya &lt;3 &amp; &quot;co&quot;</small>', $html);
+        $this->assertStringNotContainsString('&amp;amp;', $html);
+        $this->assertStringNotContainsString('<3', $html);
+
+        // Lists, and a message naming one.
+        $this->assertStringContainsString('Books &amp; Gifts &lt;3 &quot;x&quot; (2)', $this->renderBlade("@foreach (Statamic::tag('wishlist:lists')->fetch() as \$l){!! \$l['title'] !!} ({{ \$l['count'] }})\n@endforeach"));
+
+        session()->flash('wishlist_success', 'Added to '.$title.'.');
+        $this->assertSame('<p>Added to Books &amp; Gifts &lt;3 &quot;x&quot;.</p>', $this->renderBlade("@if (\$message = Statamic::tag('wishlist:success')->fetch())<p>{!! \$message !!}</p>@endif"));
+    }
+
+    #[Test]
+    public function the_toggle_attributes_cant_be_broken_out_of(): void
+    {
+        $html = $this->renderBlade('<button {!! Statamic::tag(\'wishlist:toggle_attrs\')->param(\'id\', $id)->fetch() !!}>♥</button>', ['id' => 'x" onmouseover="alert(1)']);
+
+        $this->assertStringNotContainsString('" onmouseover="', $html);
+        $this->assertStringContainsString('&quot; onmouseover=&quot;alert(1)', $html);
+    }
+
+    #[Test]
+    public function a_blade_shared_page_escapes_the_title_once(): void
+    {
+        config(['wishlist.share.template' => 'shared-blade']);
+        $this->default->setTitle('Jo & Sam <3');
+        $this->wishlists()->save($this->default);
+
+        $this->get('/wishlist/shared/'.$this->default->shareKey())
+            ->assertOk()
+            ->assertSee('<h1>Jo &amp; Sam &lt;3</h1>', false)
+            ->assertDontSee('&amp;amp;', false);
+    }
 }

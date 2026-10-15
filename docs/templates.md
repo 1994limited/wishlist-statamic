@@ -11,6 +11,7 @@ Every example is in Antlers, with the Blade version under **Blade**. In Blade:
 - **Tags** are written `<s:wishlist:toggle :id="$id">…</s:wishlist:toggle>`, and single ones `<s:wishlist:count />`.
 - **Values you test or loop over yourself** come from `Statamic::tag()`, for example `@if (Statamic::tag('wishlist:has')->param('id', $id)->fetch())`.
 - **Partials** for `wishlist:render` can be `.blade.php` files. They get `$title`, `$count`, `$no_results` and `$items`, each item an array with `title`, `url`, `id` and `wishlist_item` (its notes, quantity and when it was added).
+- **Visitors' text arrives already escaped**, as it does in Antlers: list titles, notes and other `wishlist_item` fields, and the success and error messages. Print those with `{!! !!}`, or `{{ }}` would escape them twice (`Books &amp;amp; Gifts`). The entry's own fields, like each item's `title` and `url`, aren't escaped by Wishlist, so print them with `{{ }}` as usual. Use `{!! !!}` only for these values, `toggle_attrs`, and `$template_content`.
 - **The shared page** is an Antlers template placed in your layout as `$template_content`. If your layout is Blade and uses `@yield('content')`, either add `{!! $template_content ?? '' !!}` next to it, or point `share.template` at a Blade view of your own (see [The shared page](sharing.md#the-shared-page)).
 
 ## 1. Add the script
@@ -135,7 +136,7 @@ Make a page (say `/wishlist`) and a partial to draw the list, `resources/views/p
 
 ```blade
 {{-- resources/views/partials/wishlist.blade.php --}}
-<h2>{{ $title }} ({{ $count }})</h2>
+<h2>{!! $title !!} ({{ $count }})</h2>
 
 @if ($no_results)
     <p>Nothing saved yet.</p>
@@ -144,7 +145,7 @@ Make a page (say `/wishlist`) and a partial to draw the list, `resources/views/p
         @foreach ($items as $item)
             <li>
                 <a href="{{ $item['url'] }}">{{ $item['title'] }}</a>
-                @if ($item['wishlist_item']['notes'] ?? null)<small>{{ $item['wishlist_item']['notes'] }}</small>@endif
+                @if ($item['wishlist_item']['notes'] ?? null)<small>{!! $item['wishlist_item']['notes'] !!}</small>@endif
                 <button {!! Statamic::tag('wishlist:toggle_attrs')->param('id', $item['id'])->fetch() !!}>Remove</button>
             </li>
         @endforeach
@@ -191,7 +192,7 @@ With a server driver you can also loop over the list directly, without a partial
 
 ```blade
 <s:wishlist>
-    <h2>{{ $title }}</h2>
+    <h2>{!! $title !!}</h2>
     @foreach ($items as $item)<a href="{{ $item['url'] }}">{{ $item['title'] }}</a>@endforeach
 </s:wishlist>
 ```
@@ -267,7 +268,7 @@ Save buttons put things on the visitor's **default** list (their first, unless t
 @php($entryId = $id)
 <s:wishlist:lists>
     <s:wishlist:add :id="$entryId" :list="$id">
-        <button type="submit">Add to {{ $title }}</button>
+        <button type="submit">Add to {!! $title !!}</button>
     </s:wishlist:add>
 </s:wishlist:lists>
 ```
@@ -340,10 +341,10 @@ Without the script, the page reloads after each form. Show the message in your l
 
 ```blade
 @if ($message = Statamic::tag('wishlist:success')->fetch())
-    <p class="notice">{{ $message }}</p>
+    <p class="notice">{!! $message !!}</p>
 @endif
 @if ($message = Statamic::tag('wishlist:error')->fetch())
-    <p class="error">{{ $message }}</p>
+    <p class="error">{!! $message !!}</p>
 @endif
 ```
 
