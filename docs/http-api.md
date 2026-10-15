@@ -8,7 +8,7 @@ The tags and the script use these endpoints. Use them directly for a headless fr
 - **POSTs need a CSRF token**, in an `X-CSRF-TOKEN` header or a `_token` field. Get one from `GET /!/wishlist/state`.
 - **Send `Accept: application/json`** for JSON answers. Without it, a POST is treated as a plain form: it redirects back (or to `_redirect`), with a message flashed for `{{ wishlist:success }}` or an error for `{{ wishlist:error }}`.
 - Bodies can be JSON or form fields.
-- **With the browser driver**, every POST answers `400` "Wishlists are kept in your browser on this site.", and `state` returns no lists.
+- **With the browser driver**, every POST except `cart` answers `400` "Wishlists are kept in your browser on this site.", and `state` returns no lists.
 
 ## Reading
 
@@ -74,7 +74,7 @@ and on failure a `4xx` with `{ "success": false, "message": "…" }`. The messag
 
 | Endpoint | Fields | Adds to the answer |
 | --- | --- | --- |
-| `POST items/add` | `id`, `list`?, item fields (`notes`, `quantity`, or `data[…]`) | `added: true` |
+| `POST items/add` | `id`, `variant`? ([Cargo](cargo.md#variants)), `list`?, item fields (`notes`, `quantity`, or `data[…]`) | `added: true` |
 | `POST items/remove` | `id`, `list`? | `added: false` |
 | `POST items/toggle` | `id`, `list`?, item fields | `added`: whether it's on the list now |
 | `POST lists/create` | `title` | |
@@ -84,6 +84,7 @@ and on failure a `4xx` with `{ "success": false, "message": "…" }`. The messag
 | `POST lists/default` | `list` | |
 | `POST lists/share` | `list`? | a new `share_url` |
 | `POST lists/import` | `key` (a share key), or `ids[]`, or `i`; `list`? | `imported`: how many were new |
+| `POST cart` | `list`?, or `i` with the browser driver ([Cargo](cargo.md#adding-a-whole-list-to-the-basket) only) | `cart`: `added` (how many) and `skipped` (the item IDs left out) |
 
 `list` is a list's ID. Left out, it means the visitor's default list, which `add`, `toggle` and `import` make if the visitor has none yet.
 

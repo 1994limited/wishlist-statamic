@@ -565,7 +565,7 @@
 
         document.querySelectorAll('form[data-wishlist-form][data-wishlist-id]').forEach(function (form) {
             var listField = form.querySelector('input[name="list"]');
-            var added = has(form.getAttribute('data-wishlist-id'), listField ? listField.value : undefined);
+            var added = has(formReference(form), listField ? listField.value : undefined);
             form.setAttribute('data-wishlist-active', added ? 'true' : 'false');
             form.querySelectorAll('[type="submit"], button:not([type])').forEach(function (button) {
                 button.setAttribute('aria-pressed', added ? 'true' : 'false');
@@ -664,6 +664,14 @@
             });
     }
 
+    // What a form saves: its item, with the variant chosen in it (Cargo).
+    function formReference(form) {
+        var id = form.getAttribute('data-wishlist-id');
+        var field = form.elements.namedItem('variant');
+        var variant = field && 'value' in field ? String(field.value) : '';
+        return variant && id ? String(id).split('#')[0] + '#' + variant : id;
+    }
+
     function formPayload(form) {
         var data = new FormData(form);
         var payload = { data: {} };
@@ -707,8 +715,17 @@
         // "Add all to basket" (Cargo) posts as a normal form, to the
         // basket. With the browser driver, the list goes with it.
         if (form && form.getAttribute('data-wishlist-form') === 'cart') {
+            // A form with no list of its own takes the picked list.
+            var listField = form.querySelector('input[name="list"]');
+            if (!listField || listField.hasAttribute('data-wishlist-picked')) {
+                if (!listField) {
+                    listField = form.appendChild(Object.assign(document.createElement('input'), { type: 'hidden', name: 'list' }));
+                    listField.setAttribute('data-wishlist-picked', '');
+                }
+                listField.value = pickedList() || '';
+            }
             if (config.driver === 'browser') {
-                var l = list(form.querySelector('input[name="list"]') ? form.querySelector('input[name="list"]').value : pickedList());
+                var l = list(listField ? listField.value : undefined);
                 var field = form.querySelector('input[name="i"]') || form.appendChild(Object.assign(document.createElement('input'), { type: 'hidden', name: 'i' }));
                 field.value = encode(l ? l.items.map(function (i) { return i.id; }) : []);
             }
@@ -745,6 +762,8 @@
     document.addEventListener('change', function (event) {
         if (event.target.matches && event.target.matches('select[data-wishlist-lists]')) {
             picked = event.target.value;
+            refresh();
+        } else if (event.target.name === 'variant' && event.target.form && event.target.form.hasAttribute('data-wishlist-form')) {
             refresh();
         }
     });

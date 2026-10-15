@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.0 (unreleased)
+
+### Added
+- **Cargo.** With [Cargo](https://builtwithcargo.dev) installed, lists show each product's price and stock (`{{ cargo:* }}`), keep the price it was saved at and say when it has dropped, and save variants as separate items (`variant` on the item tags, or a `variant` field in the form). `{{ wishlist:add_to_cart }}` puts a whole list in the basket, leaving out what's sold out or still needs a variant chosen. Gift Vouchers of any amount are treated as needing their amount chosen. Nothing changes without Cargo. See [Cargo](docs/cargo.md), and the new [Dog-ear Books with Cargo](https://github.com/1994limited/wishlist-cargo-demo) demo.
+
 ## 1.1.0 (2026-10-15)
 
 ### Added

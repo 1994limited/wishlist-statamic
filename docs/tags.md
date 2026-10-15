@@ -84,11 +84,12 @@ Each item has every field of its entry (`title`, `url`, `price`, …), plus:
 
 | Variable | |
 | --- | --- |
-| `wishlist_item:id` | The entry's ID (or `taxonomy::slug` for a term). |
+| `wishlist_item:id` | The entry's ID (or `taxonomy::slug` for a term, or `product-id#variant` for a [Cargo variant](cargo.md#variants)). Use it to remove the item. |
 | `wishlist_item:added_at` | When it was saved. Use with `format`: `{{ wishlist_item:added_at format="j M Y" }}`. |
 | `wishlist_item:notes` | What the visitor noted, if anything. |
 | `wishlist_item:quantity` | The quantity they set, if any. |
 | `wishlist_item:{field}` | Any other [item field](configuration.md#what-can-be-saved). |
+| `cargo:*` | For [Cargo](cargo.md#showing-products-on-a-list) products: price, stock, variant and price drop. |
 
 Entries that have since been unpublished, expired or deleted are left out.
 

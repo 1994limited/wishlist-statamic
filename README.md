@@ -15,6 +15,7 @@ Keep lists in **flat files**, in the **database**, or only in **the visitor's ow
 - **Guests welcome.** Visitors don't need an account. When they sign in, what they saved as a guest moves to their account.
 - **Works without JavaScript.** Every button is a real form. With the script (no dependencies, no build step) the page updates in place, and it works on statically cached pages.
 - **Your markup, in Antlers or Blade.** Tags and `data-` attributes, no imposed components or styles. Lists are drawn with your own partials. Every example in the docs has a Blade version.
+- **Cargo shops.** With [Cargo](https://builtwithcargo.dev), lists show prices and stock, say when a price has dropped since saving, keep sizes and other variants apart, and go in the basket in one go.
 - **Control Panel.** Content → Wishlists shows every list, what's on it, and the entries saved most, with permissions to view and delete.
 - **For developers.** Events, a PHP API, a JSON API for headless front ends, and room for your own storage driver.
 
@@ -103,6 +104,7 @@ Everything else is in [the documentation](docs/README.md):
 - [Installation](docs/installation.md) and [storage drivers](docs/drivers.md)
 - [Templates](docs/templates.md), [tags](docs/tags.md), [examples](docs/examples.md) and [the demo shop](docs/demo.md)
 - [JavaScript](docs/javascript.md) and [share links](docs/sharing.md)
+- [Cargo](docs/cargo.md): prices, stock, variants and the basket
 - [Guests and signing in](docs/guests.md) and [the Control Panel](docs/control-panel.md)
 - [Configuration](docs/configuration.md), [HTTP API](docs/http-api.md), [PHP API](docs/php-api.md) and [troubleshooting](docs/troubleshooting.md)
 

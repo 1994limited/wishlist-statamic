@@ -16,17 +16,18 @@ Wishlist lets visitors save entries to wishlists, keep several named lists, and 
 7. [Share links](sharing.md): how links work with each driver, and the shared page.
 8. [Examples](examples.md): complete templates to copy.
 9. [The demo shop](demo.md): Dog-ear Books, a whole site built with Wishlist, to run or copy from.
+10. [Cargo](cargo.md): prices, stock, variants, price drops and adding a list to the basket, for shops built with Cargo.
 
 ## Running a site
 
-10. [Guests and signing in](guests.md): guest lists, merging on sign-in, cookies, pruning.
-11. [The Control Panel](control-panel.md): Content → Wishlists, and permissions.
+11. [Guests and signing in](guests.md): guest lists, merging on sign-in, cookies, pruning.
+12. [The Control Panel](control-panel.md): Content → Wishlists, and permissions.
 
 ## Reference
 
-12. [HTTP API](http-api.md): the `/!/wishlist/…` endpoints, for headless and custom front ends.
-13. [PHP API](php-api.md): the `Wishlists` service, repositories, events, and writing your own driver.
-14. [Troubleshooting](troubleshooting.md): common problems and fixes.
+13. [HTTP API](http-api.md): the `/!/wishlist/…` endpoints, for headless and custom front ends.
+14. [PHP API](php-api.md): the `Wishlists` service, repositories, events, and writing your own driver.
+15. [Troubleshooting](troubleshooting.md): common problems and fixes.
 
 ## Requirements
 

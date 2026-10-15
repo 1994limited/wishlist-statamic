@@ -44,3 +44,7 @@ To try the other [drivers](drivers.md), set `WISHLIST_DRIVER` in `.env` to `data
 | `public/css/dogear.css` | The styles, including the ribbon |
 
 The demo's own code is MIT licensed, so copy whatever helps. [Examples](examples.md) has the same patterns, trimmed down.
+
+## With Cargo
+
+[Dog-ear Books with Cargo](https://github.com/1994limited/wishlist-cargo-demo) is the same shop with the books for sale through [Cargo](cargo.md): hardback and paperback editions, prices and stock on the list, price drops, "Add this list to my basket", buying from a shared list, and Cargo's checkout with its dummy payment gateway. It runs the same way.

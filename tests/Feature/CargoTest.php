@@ -139,6 +139,68 @@ class CargoTest extends CargoTestCase
     }
 
     #[Test]
+    public function a_button_for_each_variant_from_the_products_options(): void
+    {
+        $this->wishlists()->add($this->owner, self::SHIRT.'#M');
+        $product = Entry::find(self::SHIRT)->toAugmentedArray();
+
+        $antlers = $this->antlers('{{ product_variants:options }}{{ wishlist:toggle :id="id" :variant="key" }}<button>{{ variant }}</button>{{ /wishlist:toggle }}{{ /product_variants:options }}', $product);
+        $this->assertStringContainsString('data-wishlist-id="'.self::SHIRT.'#S" data-wishlist-active="false"', $antlers);
+        $this->assertStringContainsString('data-wishlist-id="'.self::SHIRT.'#M" data-wishlist-active="true"', $antlers);
+
+        $blade = Blade::render('@foreach ($product_variants[\'options\'] as $option)<s:wishlist:toggle :id="$id" :variant="$option[\'key\']"><button>{{ $option[\'variant\'] }}</button></s:wishlist:toggle>@endforeach', $product);
+        $this->assertStringContainsString('data-wishlist-id="'.self::SHIRT.'#S" data-wishlist-active="false"', $blade);
+        $this->assertStringContainsString('data-wishlist-id="'.self::SHIRT.'#M" data-wishlist-active="true"', $blade);
+    }
+
+    #[Test]
+    public function a_variant_is_removed_by_its_item_id(): void
+    {
+        $this->wishlists()->add($this->owner, self::SHIRT.'#S');
+        $this->wishlists()->add($this->owner, self::SHIRT.'#M');
+
+        $html = $this->antlers('{{ wishlist }}{{ items }}<button {{ wishlist:toggle_attrs :id="wishlist_item:id" }}>Remove</button>{{ /items }}{{ /wishlist }}');
+        $this->assertStringContainsString('data-wishlist-toggle="'.self::SHIRT.'#S"', $html);
+        $this->assertStringContainsString('data-wishlist-toggle="'.self::SHIRT.'#M"', $html);
+
+        $this->post('/!/wishlist/items/remove', ['id' => self::SHIRT, 'variant' => 'S'])->assertRedirect();
+        $this->assertFalse($this->wishlists()->has($this->owner, self::SHIRT.'#S'));
+        $this->assertTrue($this->wishlists()->has($this->owner, self::SHIRT.'#M'));
+    }
+
+    #[Test]
+    public function a_list_partial_with_add_to_basket_for_each_product(): void
+    {
+        $this->wishlists()->add($this->owner, self::SHIRT.'#S');
+        $this->wishlists()->add($this->owner, self::SHIRT.'#M');
+        $this->wishlists()->add($this->owner, self::SHIRT);
+        $this->wishlists()->add($this->owner, self::MUG);
+
+        $html = $this->antlers('{{ wishlist }}{{ items }}[{{ title }}{{ if cargo:needs_choice }} choose{{ else }} {{ cargo:price_formatted }}{{ if cargo:in_stock }}{{ cart:add }}<input type="hidden" name="product" value="{{ cargo:product }}">{{ if cargo:variant }}<input type="hidden" name="variant" value="{{ cargo:variant }}">{{ /if }}<button>Add</button>{{ /cart:add }}{{ else }} sold out{{ /if }}{{ /if }}]{{ /items }}{{ /wishlist }}');
+
+        $this->assertStringContainsString('name="variant" value="S"', $html);
+        $this->assertStringContainsString(' £17.00 sold out]', $html);
+        $this->assertStringContainsString('[Linen Shirt choose]', $html);
+        $this->assertSame(2, substr_count($html, 'cargo/cart/line-items'));
+        $this->assertStringContainsString('name="product" value="'.self::MUG.'"', $html);
+    }
+
+    #[Test]
+    public function the_basket_form_takes_a_list_and_a_redirect(): void
+    {
+        $this->wishlists()->add($this->owner, self::MUG);
+        $other = $this->wishlists()->create($this->owner, 'Other');
+
+        $html = $this->antlers('{{ wishlist:add_to_cart list="'.$other->id().'" redirect="/checkout" }}<button>Add all</button>{{ /wishlist:add_to_cart }}');
+        $this->assertStringContainsString('name="list" value="'.$other->id().'"', $html);
+        $this->assertStringContainsString('name="_redirect" value="/checkout"', $html);
+
+        $this->post('/!/wishlist/cart', ['list' => $other->id(), '_redirect' => '/checkout'])
+            ->assertRedirect('/checkout')
+            ->assertSessionHas('wishlist_success', 'Nothing on this list could go in your basket.');
+    }
+
+    #[Test]
     public function the_list_goes_in_the_basket_without_whats_out_of_stock_or_unchosen(): void
     {
         $this->wishlists()->add($this->owner, self::SHIRT.'#S', null, ['quantity' => 2]);
