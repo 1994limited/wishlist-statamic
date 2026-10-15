@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3 (2026-10-15)
+
+### Fixed
+- **A lighter Control Panel icon.** The Wishlists nav icon carried an 8 KB embedded metadata block, inlined into every Control Panel page and the Wishlists page's script. The drawing is unchanged.
+
 ## 1.0.2 (2026-10-15)
 
 ### Fixed
