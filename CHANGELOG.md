@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.1 (unreleased)
+## 1.2.1 (2026-10-15)
 
 ### Fixed
 - **Remove buttons remove from the list they're on.** Item buttons and forms inside a drawn list (a `{{ wishlist:render }}` partial, `{{ wishlist:lists }}`) now act on that list when given no `list`. Before, with another list picked, Remove acted on the default list instead. Blade partials pass `->param('list', $wishlist_list_id ?? null)`, as `Statamic::tag()` doesn't see the partial's variables.
