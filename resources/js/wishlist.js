@@ -630,8 +630,8 @@
 
     var rendering = new WeakMap();
 
-    function renderUrl(container) {
-        var l = list(container.getAttribute('data-wishlist-list') || pickedList());
+    function renderUrl(container, listId) {
+        var l = list(container.getAttribute('data-wishlist-list') || listId || pickedList());
         var references = l ? l.items.map(function (i) { return i.id; }) : [];
         return (
             config.endpoint +
@@ -917,11 +917,13 @@
         document.documentElement.setAttribute('data-wishlist-can-share', canShare() ? 'true' : 'false');
 
         ready.then(function () {
-            // The server drivers rendered these already; draw them again
-            // only once the list changes.
+            // The server drivers rendered these already, with the list named
+            // or the default. Draw them again only once that changes, or when
+            // another list is picked (a pick remembered from an earlier page).
             if (config.driver !== 'browser') {
+                var standard = list();
                 document.querySelectorAll('[data-wishlist-render]').forEach(function (container) {
-                    rendering.set(container, renderUrl(container));
+                    rendering.set(container, renderUrl(container, standard && standard.id));
                 });
             }
             refresh();
