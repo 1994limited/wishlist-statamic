@@ -25,4 +25,6 @@
 - **A malformed or hand-edited list file no longer breaks every list.** Bad files are read as empty, bad items are left out, and an unreadable owner shows as "Unknown owner" in the Control Panel.
 - **Corrupted localStorage is cleaned on load** (browser driver): odd values are dropped, limits applied, and one list is the default.
 - **Notes stay on a redrawn list.** With the file and database drivers the script now asks for the visitor's own list, so notes and quantities don't drop out of view after a change.
+- **Notes show with the browser driver.** The script posts each item's notes and quantity along with the list for `{{ wishlist:render }}`, held to the same rules as when saving.
+- **A lone `<` in a note or title is kept** ("I <3 this"). Only whole HTML tags are removed; everything is escaped when printed.
 - **The copy link button works on http sites.** The Clipboard API only exists on https, so it now falls back to the older way of copying, and selects the link if the browser won't copy at all. It's disabled while there's no list to share.

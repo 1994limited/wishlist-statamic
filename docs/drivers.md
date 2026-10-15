@@ -80,7 +80,8 @@ What that means:
 
 - **Lists stay on one device.** Signing in doesn't bring them along, and clearing site data removes them.
 - **The server can't see them.** Tags like `{{ wishlist:has }}` and `{{ wishlist:count }}` read as empty. The script fills in buttons, counts and lists once the page loads, using the `data-wishlist-*` attributes and `{{ wishlist:render }}`. See [JavaScript](javascript.md).
-- **Share links carry the items.** A link is a snapshot of the list when it was copied. See [Share links](sharing.md).
+- **Share links carry the items.** A link is a snapshot of the list when it was copied, and doesn't include the notes kept with items. See [Share links](sharing.md).
+- **Notes are drawn too.** `{{ wishlist:render }}` gets each item's notes and quantity: the script sends them with the list.
 - **No events, no Control Panel data, no "Most saved".**
 - **Lists stay in step across open tabs.**
 

@@ -44,7 +44,7 @@ These don't apply to the browser driver, where lists belong to whoever is using 
 
 Only published entries can be saved. Entries unpublished or deleted later drop out of lists when they're shown.
 
-Item fields are kept as plain text up to 1,000 characters, with HTML removed. `quantity` is kept as a whole number from 1 to 9,999. Any name you add to `item_fields` is kept as text.
+Item fields are kept as plain text up to 1,000 characters, with whole HTML tags removed (a lone `<`, as in "I <3 this", stays). They're escaped wherever they're printed. `quantity` is kept as a whole number from 1 to 9,999. Any name you add to `item_fields` is kept as text.
 
 ## Share links
 

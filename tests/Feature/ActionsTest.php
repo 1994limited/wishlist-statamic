@@ -137,6 +137,9 @@ class ActionsTest extends TestCase
             'notes' => '<b>Size M</b>',
             'data' => ['quantity' => '3', 'price' => '0.01'],
         ])->assertJsonPath('list.items.0.data', ['notes' => 'Size M', 'quantity' => 3]);
+
+        $this->actingAs($user)->postJson('/!/wishlist/items/add', ['id' => self::A, 'notes' => 'For Priya <3 & "co"'])
+            ->assertJsonPath('list.items.0.data.notes', 'For Priya <3 & "co"');
     }
 
     #[Test]

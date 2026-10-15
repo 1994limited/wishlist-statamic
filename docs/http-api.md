@@ -45,7 +45,17 @@ The fields in [`resolve_fields`](configuration.md#the-script) (title and url by 
 
 ### `GET /!/wishlist/render`
 
-HTML: a partial rendered with a list. With the file and database drivers, pass the visitor's list as `list=…` to draw it as stored, notes and all (someone else's list isn't drawn). Otherwise it's drawn from the given entries (`i=…`, and a title as `t=…`, escaped). `view` must be the signed value from a `{{ wishlist:render }}` container's `data-wishlist-render`. Anything else answers `400`.
+HTML: a partial rendered with a list. With the file and database drivers, pass the visitor's list as `list=…` to draw it as stored, notes and all (someone else's list isn't drawn). Otherwise it's drawn from the given entries (`i=…`, and a title as `t=…`, escaped).
+
+### `POST /!/wishlist/render`
+
+The same, for the browser driver, which posts its list with what's kept with each item (too long for a URL). A JSON body:
+
+```json
+{ "view": "…signed…", "t": "Birthday", "items": [{ "id": "…", "data": { "notes": "Size M", "quantity": 2 } }] }
+```
+
+Item fields are held to the same rules as when saving: only [`item_fields`](configuration.md#what-can-be-saved), plain text, quantity a whole number. It only draws HTML and changes nothing, so it needs no CSRF token. `view` must be the signed value from a `{{ wishlist:render }}` container's `data-wishlist-render`. Anything else answers `400`.
 
 ## Changing
 

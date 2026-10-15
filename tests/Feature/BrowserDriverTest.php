@@ -74,6 +74,33 @@ class BrowserDriverTest extends TestCase
     }
 
     #[Test]
+    public function posted_items_are_drawn_with_their_notes_held_to_the_saving_rules(): void
+    {
+        file_put_contents(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html', '{{ title }}|{{ items }}[{{ title }}:{{ wishlist_item:notes }}:{{ wishlist_item:quantity }}:{{ wishlist_item:price }}]{{ /items }}');
+
+        try {
+            $html = $this->postJson('/!/wishlist/render', [
+                'view' => Crypt::encryptString('partials/saved'),
+                't' => '<b>Birthday</b>',
+                'items' => [
+                    ['id' => self::A, 'data' => ['notes' => 'Size M" onclick="x', 'quantity' => '3', 'price' => '0.01']],
+                    ['id' => self::A, 'data' => ['notes' => 'a repeat']],
+                    ['id' => ['x']],
+                    'nonsense',
+                    ['id' => 'not-an-entry'],
+                ],
+            ])->assertOk()->getContent();
+
+            $this->assertSame('Birthday|[Linen Shirt:Size M&quot; onclick=&quot;x:3:]', $html);
+
+            // Without a signed view, nothing is drawn.
+            $this->postJson('/!/wishlist/render', ['view' => 'partials/saved', 'items' => []])->assertStatus(400);
+        } finally {
+            unlink(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html');
+        }
+    }
+
+    #[Test]
     public function tags_read_as_empty_and_leave_the_rest_to_the_script(): void
     {
         $this->assertSame('0|false|browser', $this->antlers('{{ wishlist:count }}|{{ if {wishlist:has id="'.self::A.'"} }}true{{ else }}false{{ /if }}|{{ wishlist:driver }}'));

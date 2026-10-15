@@ -323,7 +323,7 @@ class Wishlists
             ->filter(fn ($value) => is_scalar($value) && $value !== '')
             ->map(fn ($value, $key) => $key === 'quantity'
                 ? max(1, min(9999, (int) $value))
-                : Str::limit(strip_tags(trim((string) $value)), 1000, ''))
+                : Str::limit(static::plainText((string) $value), 1000, ''))
             ->all();
     }
 
@@ -346,9 +346,19 @@ class Wishlists
 
     protected function title(?string $title): string
     {
-        $title = Str::limit(trim(strip_tags((string) $title)), 100, '');
+        $title = Str::limit(static::plainText((string) $title), 100, '');
 
         return $title !== '' ? $title : config('wishlist.default_list_title', 'My Wishlist');
+    }
+
+    /**
+     * Text a visitor wrote, without whole HTML tags. Unlike strip_tags(),
+     * a lone "<" stays ("I <3 this"). Output is escaped anyway; this keeps
+     * markup out of what's stored. resources/js/wishlist.js does the same.
+     */
+    public static function plainText(string $text): string
+    {
+        return trim(preg_replace('/<[^>]*>/', '', $text) ?? '');
     }
 
     protected function listLimit(): int

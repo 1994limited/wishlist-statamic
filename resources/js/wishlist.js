@@ -625,16 +625,39 @@
         );
     }
 
+    // The browser driver posts its items, with what's kept with each (too
+    // long for a URL); the server ones fetch the visitor's stored list.
+    function renderRequest(container) {
+        if (config.driver !== 'browser') {
+            var url = renderUrl(container);
+            return { key: url, url: url, init: { headers: { Accept: 'text/html' } } };
+        }
+
+        var l = list(container.getAttribute('data-wishlist-list') || pickedList());
+        var body = JSON.stringify({
+            view: container.getAttribute('data-wishlist-render'),
+            t: l ? l.title : undefined,
+            items: l ? l.items.map(function (i) { return { id: i.id, data: i.data }; }) : [],
+        });
+
+        return {
+            key: body,
+            url: config.endpoint + '/render',
+            init: { method: 'POST', headers: { Accept: 'text/html', 'Content-Type': 'application/json' }, body: body },
+        };
+    }
+
     function render(container) {
-        var url = renderUrl(container);
+        var request = renderRequest(container);
+        var key = request.key;
 
-        if (rendering.get(container) === url) return;
-        rendering.set(container, url);
+        if (rendering.get(container) === key) return;
+        rendering.set(container, key);
 
-        fetch(url, { headers: { Accept: 'text/html' } })
+        fetch(request.url, request.init)
             .then(function (response) { return response.ok ? response.text() : null; })
             .then(function (html) {
-                if (html !== null && rendering.get(container) === url) {
+                if (html !== null && rendering.get(container) === key) {
                     container.innerHTML = html;
                     refresh();
                 }

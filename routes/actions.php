@@ -8,6 +8,16 @@ use NineteenNinetyFour\Wishlist\Http\Controllers\ActionsController;
 Route::get('state', [ActionsController::class, 'state'])->name('state');
 Route::get('resolve', [ActionsController::class, 'resolve'])->name('resolve');
 Route::get('render', [ActionsController::class, 'render'])->name('render');
+
+// The browser driver posts its items (with their notes, too long for a
+// URL). It only draws HTML and changes nothing, and that driver has no
+// session to take a CSRF token from, so it's left out of the CSRF check.
+Route::post('render', [ActionsController::class, 'render'])->name('render.post')->withoutMiddleware([
+    'App\Http\Middleware\VerifyCsrfToken',
+    'Illuminate\Foundation\Http\Middleware\VerifyCsrfToken',
+    'Illuminate\Foundation\Http\Middleware\ValidateCsrfToken',
+    'Illuminate\Foundation\Http\Middleware\PreventRequestForgery',
+]);
 Route::get('wishlist.js', [ActionsController::class, 'script'])->name('script');
 
 // Changes are rate limited per visitor (wishlist.throttle), so a script

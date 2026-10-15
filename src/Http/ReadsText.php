@@ -3,6 +3,7 @@
 namespace NineteenNinetyFour\Wishlist\Http;
 
 use Illuminate\Http\Request;
+use NineteenNinetyFour\Wishlist\Wishlists;
 
 /**
  * Reading what a visitor sent. A field can arrive as anything (an array,
@@ -30,7 +31,7 @@ trait ReadsText
      */
     protected function linkTitle(Request $request): ?string
     {
-        $title = trim(strip_tags((string) $this->text($request, 't', 1000)));
+        $title = Wishlists::plainText((string) $this->text($request, 't', 1000));
 
         return $title === '' ? null : mb_substr($title, 0, 100);
     }

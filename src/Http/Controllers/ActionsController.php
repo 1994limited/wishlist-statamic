@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Crypt;
 use NineteenNinetyFour\Wishlist\CurrentOwner;
 use NineteenNinetyFour\Wishlist\Http\ReadsText;
@@ -78,7 +79,8 @@ class ActionsController
 
         // With the file and database drivers, the visitor's own list (so
         // the notes and quantities kept with each item come too). With the
-        // browser driver, the items the script sent.
+        // browser driver, the items the script sent: posted with what's kept
+        // with them, or as references in the URL.
         $owner = $this->wishlists->storesOnServer() ? $this->owner->get() : null;
         $list = $owner ? $this->wishlists->find($owner, $this->text($request, 'list', 64)) : null;
 
@@ -94,9 +96,8 @@ class ActionsController
      */
     protected function linkData(Request $request): array
     {
-        $items = $this->presenter->items(collect($this->references($request))
-            ->filter(fn (string $reference) => $this->wishlists->allowed($reference))
-            ->map(fn (string $reference) => Item::make($reference)));
+        $items = $this->presenter->items($this->linkItems($request)
+            ->filter(fn (Item $item) => $this->wishlists->allowed($item->reference)));
 
         return [
             'items' => $items,
@@ -105,6 +106,37 @@ class ActionsController
             // From the link, so anyone could have written it.
             'title' => e($this->linkTitle($request) ?? config('wishlist.default_list_title', 'My Wishlist')),
         ];
+    }
+
+    /**
+     * The items to draw, from the browser. Posted ones may bring what the
+     * visitor kept with them, held to the same rules as when saving
+     * (wishlist.item_fields, plain text, quantity a whole number).
+     *
+     * @return Collection<int, Item>
+     */
+    protected function linkItems(Request $request): Collection
+    {
+        $posted = $request->isMethod('post') ? $request->input('items') : null;
+
+        if (! is_array($posted)) {
+            return collect($this->references($request))->map(fn (string $reference) => Item::make($reference));
+        }
+
+        return collect($posted)
+            ->take((int) config('wishlist.limits.items', 500))
+            ->map(function ($item) {
+                $id = is_array($item) && (is_string($item['id'] ?? null) || is_int($item['id'] ?? null)) ? (string) $item['id'] : '';
+
+                if ($id === '' || strlen($id) > 255) {
+                    return null;
+                }
+
+                return Item::make($id, $this->wishlists->itemData(is_array($item['data'] ?? null) ? $item['data'] : []));
+            })
+            ->filter()
+            ->unique(fn (Item $item) => $item->reference)
+            ->values();
     }
 
     public function script(): Response
