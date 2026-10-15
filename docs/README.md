@@ -1,6 +1,6 @@
 # Wishlist documentation
 
-Wishlist lets visitors save entries to wishlists, keep several named lists, and share any of them with a link. Lists are kept in flat files, in the database, or only in the visitor's own browser. Templates, tags and the script work the same whichever you choose.
+Wishlist lets visitors save entries to wishlists, keep several named lists, and share any of them with a link. Lists are kept in flat files, in the database, or only in the visitor's own browser. Templates, tags and the script work the same whichever you choose, in Antlers or Blade: every example has both.
 
 ## Setting up
 
@@ -10,7 +10,7 @@ Wishlist lets visitors save entries to wishlists, keep several named lists, and 
 
 ## Building the front end
 
-4. [Templates](templates.md): a save button, a wishlist page, several lists, messages. Start here.
+4. [Templates](templates.md): a save button, a wishlist page, several lists, messages, and [using Blade](templates.md#antlers-or-blade). Start here.
 5. [Tags](tags.md): every `{{ wishlist:* }}` tag, its parameters and variables.
 6. [JavaScript](javascript.md): `window.Wishlist`, the `data-wishlist-*` attributes, events, static caching.
 7. [Share links](sharing.md): how links work with each driver, and the shared page.

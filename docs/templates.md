@@ -4,6 +4,15 @@ This page builds a wishlist into a site step by step: the script, a save button,
 
 ![Dog-ear Books, the demo shop these examples come from](images/shop.png)
 
+### Antlers or Blade
+
+Every example is in Antlers, with the Blade version under **Blade**. In Blade:
+
+- **Tags** are written `<s:wishlist:toggle :id="$id">…</s:wishlist:toggle>`, and single ones `<s:wishlist:count />`.
+- **Values you test or loop over yourself** come from `Statamic::tag()`, for example `@if (Statamic::tag('wishlist:has')->param('id', $id)->fetch())`.
+- **Partials** for `wishlist:render` can be `.blade.php` files. They get `$title`, `$count`, `$no_results` and `$items`, each item an array with `title`, `url`, `id` and `wishlist_item` (its notes, quantity and when it was added).
+- **The shared page** is an Antlers template placed in your layout as `$template_content`. If your layout is Blade and uses `@yield('content')`, either add `{!! $template_content ?? '' !!}` next to it, or point `share.template` at a Blade view of your own (see [The shared page](sharing.md#the-shared-page)).
+
 ## 1. Add the script
 
 In your layout's `<head>`:
@@ -11,6 +20,15 @@ In your layout's `<head>`:
 ```antlers
 {{ wishlist:scripts }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+<s:wishlist:scripts />
+```
+
+</details>
 
 The script sends the forms below with `fetch()` so the page doesn't reload, and keeps buttons, counts and lists up to date. It's deferred, so it doesn't hold up the page. The tag also adds a few lines of CSS that show the right label on save buttons from the first paint. Everything except the browser driver also works without the script, as ordinary form posts.
 
@@ -26,6 +44,20 @@ Wherever you show an entry, in a listing or on its own page:
     </button>
 {{ /wishlist:toggle }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+<s:wishlist:toggle :id="$id">
+    <button type="submit">
+        <span data-wishlist-when="not-added">♡ Save</span>
+        <span data-wishlist-when="added">♥ Saved</span>
+    </button>
+</s:wishlist:toggle>
+```
+
+</details>
 
 - `data-wishlist-when` marks the label for each state. The right one shows from the first paint, because the form says whether the entry is saved (`data-wishlist-active`), and stays right after each click.
 - With the browser driver the server can't know, so both labels stay hidden (keeping their space) until the script has the list.
@@ -45,6 +77,18 @@ Prefer a plain button of your own? The script handles it:
 </button>
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+<button {!! Statamic::tag('wishlist:toggle_attrs')->param('id', $id)->fetch() !!}>
+    <span data-wishlist-when="not-added">♡</span>
+    <span data-wishlist-when="added">♥</span>
+</button>
+```
+
+</details>
+
 That one needs the script, since it isn't a form.
 
 ## 3. A count in the header
@@ -52,6 +96,15 @@ That one needs the script, since it isn't a form.
 ```antlers
 <a href="/wishlist">Wishlist <span data-wishlist-count>{{ wishlist:count }}</span></a>
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+<a href="/wishlist">Wishlist <span data-wishlist-count><s:wishlist:count /></span></a>
+```
+
+</details>
 
 The tag gives the count when the page is rendered. The attribute keeps it current as the visitor saves things, and fills it in with the browser driver.
 
@@ -77,6 +130,30 @@ Make a page (say `/wishlist`) and a partial to draw the list, `resources/views/p
 {{ /if }}
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+{{-- resources/views/partials/wishlist.blade.php --}}
+<h2>{{ $title }} ({{ $count }})</h2>
+
+@if ($no_results)
+    <p>Nothing saved yet.</p>
+@else
+    <ul>
+        @foreach ($items as $item)
+            <li>
+                <a href="{{ $item['url'] }}">{{ $item['title'] }}</a>
+                @if ($item['wishlist_item']['notes'] ?? null)<small>{{ $item['wishlist_item']['notes'] }}</small>@endif
+                <button {!! Statamic::tag('wishlist:toggle_attrs')->param('id', $item['id'])->fetch() !!}>Remove</button>
+            </li>
+        @endforeach
+    </ul>
+@endif
+```
+
+</details>
+
 Each item has all of its entry's fields (`title`, `url`, your own fields), plus `wishlist_item` with `added_at`, `notes`, `quantity` and any other [item fields](configuration.md#what-can-be-saved).
 
 Then in the page's template:
@@ -86,6 +163,17 @@ Then in the page's template:
     <p>Loading your wishlist…</p>
 {{ /wishlist:render }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+<s:wishlist:render partial="wishlist">
+    <p>Loading your wishlist…</p>
+</s:wishlist:render>
+```
+
+</details>
 
 With the file and database drivers the partial is rendered straight away. With the browser driver, "Loading…" shows until the script has the list rendered. Either way it's drawn again whenever the list changes, so **Remove** takes the item away in place.
 
@@ -97,6 +185,18 @@ With a server driver you can also loop over the list directly, without a partial
     {{ items }}<a href="{{ url }}">{{ title }}</a>{{ /items }}
 {{ /wishlist }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+<s:wishlist>
+    <h2>{{ $title }}</h2>
+    @foreach ($items as $item)<a href="{{ $item['url'] }}">{{ $item['title'] }}</a>@endforeach
+</s:wishlist>
+```
+
+</details>
 
 That won't redraw itself or work with the browser driver, though. `{{ wishlist:render }}` does both.
 
@@ -124,6 +224,29 @@ Visitors can keep more than one list: "Birthday", "Kitchen ideas". Add a picker,
 {{ /wishlist:create_list }}
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+<label>List <select data-wishlist-lists></select></label>
+
+<s:wishlist:render partial="wishlist"></s:wishlist:render>
+
+<s:wishlist:rename_list>
+    <input name="title" placeholder="New name"> <button type="submit">Rename</button>
+</s:wishlist:rename_list>
+
+<s:wishlist:delete_list>
+    <button type="submit">Delete this list</button>
+</s:wishlist:delete_list>
+
+<s:wishlist:create_list>
+    <input name="title" placeholder="New list name" required> <button type="submit">Make a new list</button>
+</s:wishlist:create_list>
+```
+
+</details>
+
 The script fills the picker with the visitor's lists. The drawn list, the share link and the rename and delete forms all follow whichever list is picked, and a new list is picked as it's made.
 
 Save buttons put things on the visitor's **default** list (their first, unless they make another the default). To save to a particular list, pass `list="…"`:
@@ -136,6 +259,21 @@ Save buttons put things on the visitor's **default** list (their first, unless t
 {{ /wishlist:lists }}
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+{{-- Inside the loop, $id is each list's: keep the entry's first --}}
+@php($entryId = $id)
+<s:wishlist:lists>
+    <s:wishlist:add :id="$entryId" :list="$id">
+        <button type="submit">Add to {{ $title }}</button>
+    </s:wishlist:add>
+</s:wishlist:lists>
+```
+
+</details>
+
 (`{{ wishlist:lists }}` reads lists on the server, so this needs the file or database driver.)
 
 ## 6. Share links
@@ -145,6 +283,16 @@ Save buttons put things on the visitor's **default** list (their first, unless t
 <button data-wishlist-copy-share>Copy link</button>
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+<input data-wishlist-share readonly value="<s:wishlist:share_url />">
+<button data-wishlist-copy-share>Copy link</button>
+```
+
+</details>
+
 The input shows the picked list's share link, and the button copies it. The button gets `data-wishlist-copied` for two seconds afterwards, to show "Copied".
 
 On phones, add a button that opens the share sheet, so visitors can send the list straight to Messages or WhatsApp:
@@ -152,6 +300,15 @@ On phones, add a button that opens the share sheet, so visitors can send the lis
 ```antlers
 <button class="share-only" data-wishlist-native-share data-wishlist-share-text="Books I'd love: :title">Share…</button>
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+<button class="share-only" data-wishlist-native-share data-wishlist-share-text="Books I'd love: :title">Share…</button>
+```
+
+</details>
 
 ```css
 [data-wishlist-can-share="false"] .share-only { display: none; }
@@ -177,6 +334,20 @@ Without the script, the page reloads after each form. Show the message in your l
 {{ if {wishlist:success} }}<p class="notice">{{ wishlist:success }}</p>{{ /if }}
 {{ if {wishlist:error} }}<p class="error">{{ wishlist:error }}</p>{{ /if }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+@if ($message = Statamic::tag('wishlist:success')->fetch())
+    <p class="notice">{{ $message }}</p>
+@endif
+@if ($message = Statamic::tag('wishlist:error')->fetch())
+    <p class="error">{{ $message }}</p>
+@endif
+```
+
+</details>
 
 ## Statically cached pages
 

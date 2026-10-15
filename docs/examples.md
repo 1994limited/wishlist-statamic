@@ -30,6 +30,35 @@ The header count, messages for visitors without JavaScript, and the script:
 </body>
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+{{-- resources/views/layout.blade.php --}}
+<head>
+    …
+    <s:wishlist:scripts />
+</head>
+<body>
+<header>
+    <a href="/wishlist">
+        Wishlist <span class="badge" data-wishlist-count><s:wishlist:count /></span>
+    </a>
+</header>
+
+@if ($message = Statamic::tag('wishlist:success')->fetch())
+    <p class="notice">{{ $message }}</p>
+@endif
+@if ($message = Statamic::tag('wishlist:error')->fetch())
+    <p class="notice notice--error">{{ $message }}</p>
+@endif
+
+@yield('content')
+</body>
+```
+
+</details>
+
 ## A product card
 
 In a listing:
@@ -49,6 +78,26 @@ In a listing:
 {{ /collection:products }}
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+<s:collection:products>
+    <article class="card">
+        <a href="{{ $url }}">{{ $title }}</a>
+
+        <s:wishlist:toggle :id="$id" class="card__save">
+            <button type="submit" aria-label="Save {{ $title }}">
+                <span data-wishlist-when="not-added">♡</span>
+                <span data-wishlist-when="added">♥</span>
+            </button>
+        </s:wishlist:toggle>
+    </article>
+</s:collection:products>
+```
+
+</details>
+
 ## A product page
 
 With a note and quantity kept with the item:
@@ -65,6 +114,24 @@ With a note and quantity kept with the item:
     </button>
 {{ /wishlist:add }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+<h1>{{ $title }}</h1>
+
+<s:wishlist:add :id="$id">
+    <label>Size or note <input name="notes"></label>
+    <label>Quantity <input name="quantity" type="number" value="1" min="1"></label>
+    <button type="submit">
+        <span data-wishlist-when="not-added">Add to wishlist</span>
+        <span data-wishlist-when="added">Update wishlist</span>
+    </button>
+</s:wishlist:add>
+```
+
+</details>
 
 Adding an entry that's already saved updates its note and quantity.
 
@@ -107,6 +174,50 @@ The page's template:
 {{ /wishlist:create_list }}
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+{{-- resources/views/wishlist.blade.php --}}
+@extends('layout')
+
+@section('content')
+<h1>Your wishlists</h1>
+
+<div class="toolbar">
+    <label>List <select data-wishlist-lists></select></label>
+
+    <s:wishlist:delete_list>
+        <button type="submit">Delete this list</button>
+    </s:wishlist:delete_list>
+</div>
+
+<s:wishlist:render partial="wishlist">
+    <p>Loading your wishlist…</p>
+</s:wishlist:render>
+
+<div class="share">
+    <label>Share this list <input data-wishlist-share readonly value="<s:wishlist:share_url />"></label>
+    <button data-wishlist-copy-share>
+        <span class="copy">Copy link</span><span class="copied">Copied</span>
+    </button>
+    <button class="share-only" data-wishlist-native-share data-wishlist-share-text="Books I'd love: :title">Share…</button>
+</div>
+
+<s:wishlist:rename_list>
+    <input name="title" placeholder="Rename this list" required>
+    <button type="submit">Rename</button>
+</s:wishlist:rename_list>
+
+<s:wishlist:create_list>
+    <input name="title" placeholder="New list name" required>
+    <button type="submit">Make a new list</button>
+</s:wishlist:create_list>
+@endsection
+```
+
+</details>
+
 The partial:
 
 ```antlers
@@ -129,6 +240,32 @@ The partial:
     </ul>
 {{ /if }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+{{-- resources/views/partials/wishlist.blade.php --}}
+<h2>{{ $title }} <small>({{ $count }})</small></h2>
+
+@if ($no_results)
+    <p>Nothing saved yet. <a href="/products">Have a look around.</a></p>
+@else
+    <ul class="grid">
+        @foreach ($items as $item)
+            <li class="card">
+                <a href="{{ $item['url'] }}">{{ $item['title'] }}</a>
+                @if ($item['wishlist_item']['quantity'] ?? null)<span>× {{ $item['wishlist_item']['quantity'] }}</span>@endif
+                @if ($item['wishlist_item']['notes'] ?? null)<p>{{ $item['wishlist_item']['notes'] }}</p>@endif
+                <small>Saved {{ \Carbon\Carbon::parse($item['wishlist_item']['added_at'])->format('j M') }}</small>
+                <button {!! Statamic::tag('wishlist:toggle_attrs')->param('id', $item['id'])->fetch() !!}>Remove</button>
+            </li>
+        @endforeach
+    </ul>
+@endif
+```
+
+</details>
 
 And the CSS for the bits the script switches:
 
@@ -179,6 +316,46 @@ form[data-wishlist-error]::after { content: attr(data-wishlist-error); display: 
 {{ /if }}
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+{{-- resources/views/wishlist/shared.blade.php, with share.template set to "wishlist/shared" --}}
+@extends('layout')
+
+@section('content')
+<p class="eyebrow">Shared wishlist</p>
+<h1>{{ $title }}</h1>
+
+@if ($no_results)
+    <p>This wishlist is empty, or what was on it is no longer available.</p>
+@else
+    <ul class="grid">
+        @foreach ($items as $item)
+            <li class="card">
+                <a href="{{ $item['url'] }}">{{ $item['title'] }}</a>
+                @if ($item['wishlist_item']['notes'] ?? null)<p>{{ $item['wishlist_item']['notes'] }}</p>@endif
+                <s:wishlist:toggle :id="$item['id']">
+                    <button type="submit">
+                        <span data-wishlist-when="not-added">♡ Save</span>
+                        <span data-wishlist-when="added">♥ Saved</span>
+                    </button>
+                </s:wishlist:toggle>
+            </li>
+        @endforeach
+    </ul>
+
+    @unless ($is_owner)
+        <s:wishlist:import>
+            <button type="submit">Save all of these to my wishlist</button>
+        </s:wishlist:import>
+    @endunless
+@endif
+@endsection
+```
+
+</details>
+
 ## Signed-in only
 
 To keep lists for signed-in users only, turn guests off in `config/wishlist.php`:
@@ -196,3 +373,16 @@ and show the save button only to them:
     <a href="/login">Sign in to save</a>
 {{ /if }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+@auth
+    <s:wishlist:toggle :id="$id">…</s:wishlist:toggle>
+@else
+    <a href="/login">Sign in to save</a>
+@endauth
+```
+
+</details>

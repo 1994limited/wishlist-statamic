@@ -22,6 +22,15 @@ Then add the script to your layout's `<head>`:
 {{ wishlist:scripts }}
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+<s:wishlist:scripts />
+```
+
+</details>
+
 and put a save button on the pages that list entries. See [Templates](templates.md).
 
 ### Publishing the config

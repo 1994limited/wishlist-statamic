@@ -14,7 +14,7 @@ Keep lists in **flat files**, in the **database**, or only in **the visitor's ow
 - **Three storage drivers.** Flat files indexed like entries, two database tables, or `localStorage` with the items carried in the share link. Move between files and the database with one command.
 - **Guests welcome.** Visitors don't need an account. When they sign in, what they saved as a guest moves to their account.
 - **Works without JavaScript.** Every button is a real form. With the script (no dependencies, no build step) the page updates in place, and it works on statically cached pages.
-- **Your markup.** Tags and `data-` attributes, no imposed components or styles. Lists are drawn with your own partials.
+- **Your markup, in Antlers or Blade.** Tags and `data-` attributes, no imposed components or styles. Lists are drawn with your own partials. Every example in the docs has a Blade version.
 - **Control Panel.** Content → Wishlists shows every list, what's on it, and the entries saved most, with permissions to view and delete.
 - **For developers.** Events, a PHP API, a JSON API for headless front ends, and room for your own storage driver.
 
@@ -41,6 +41,15 @@ Add the script to your layout's `<head>`:
 {{ wishlist:scripts }}
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+<s:wishlist:scripts />
+```
+
+</details>
+
 Add a save button wherever you show an entry:
 
 ```antlers
@@ -52,6 +61,20 @@ Add a save button wherever you show an entry:
 {{ /wishlist:toggle }}
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+<s:wishlist:toggle :id="$id">
+    <button type="submit">
+        <span data-wishlist-when="not-added">♡ Save</span>
+        <span data-wishlist-when="added">♥ Saved</span>
+    </button>
+</s:wishlist:toggle>
+```
+
+</details>
+
 And show the list on a page, with a partial of your own:
 
 ```antlers
@@ -59,6 +82,17 @@ And show the list on a page, with a partial of your own:
     <p>Loading your wishlist…</p>
 {{ /wishlist:render }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+<s:wishlist:render partial="wishlist">
+    <p>Loading your wishlist…</p>
+</s:wishlist:render>
+```
+
+</details>
 
 Lists are kept in flat files by default. For the database, or the visitor's browser, set `WISHLIST_DRIVER` to `database` or `browser`.
 

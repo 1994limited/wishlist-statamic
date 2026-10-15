@@ -33,6 +33,16 @@ In templates:
 <button data-wishlist-copy-share>Copy link</button>
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+<input data-wishlist-share readonly value="<s:wishlist:share_url />">
+<button data-wishlist-copy-share>Copy link</button>
+```
+
+</details>
+
 To open the phone's share sheet instead, use `data-wishlist-native-share` (see [JavaScript](javascript.md#attributes)).
 
 `data-wishlist-share` fills in the picked list's link with every driver. `{{ wishlist:share_url }}` gives it on the server for the file and database drivers. In JavaScript: `Wishlist.shareUrl(listId)`.
@@ -44,6 +54,16 @@ To share by email or on WhatsApp:
 <a href="mailto:?subject=My%20wishlist&body={{ wishlist:share_url | urlencode }}">Email it</a>
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+<a data-wishlist-share href="#">Open link</a>
+<a href="mailto:?subject=My%20wishlist&body={{ urlencode(Statamic::tag('wishlist:share_url')->fetch()) }}">Email it</a>
+```
+
+</details>
+
 With the browser driver, build those links in JavaScript from `Wishlist.shareUrl()`, as the server doesn't know the list.
 
 ## The shared page
@@ -52,6 +72,8 @@ With the browser driver, build those links in JavaScript from `Wishlist.shareUrl
 
 
 The link opens `wishlist/shared` (set by `share.route`), rendered with the addon's template inside your site's `layout`. The page sends `X-Robots-Tag: noindex`, so shared lists stay out of search results.
+
+**With a Blade layout:** the page arrives in your layout as `$template_content`, as Antlers templates do. If your layout uses `@yield('content')`, add `{!! $template_content ?? '' !!}` beside it, or make the shared page a Blade view that `@extends` your layout and set `share.template` to it. There's a Blade version of the whole page in [Examples](examples.md).
 
 To make it your own, publish the template:
 
@@ -96,6 +118,25 @@ A starting point:
     {{ wishlist:import }}<button type="submit">Save these to my wishlist</button>{{ /wishlist:import }}
 {{ /unless }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+<h1>{{ $title }}</h1>
+<p>{{ $count }} {{ $count == 1 ? 'item' : 'items' }}</p>
+
+@foreach ($items as $item)
+    <a href="{{ $item['url'] }}">{{ $item['title'] }}</a>
+    @if ($item['wishlist_item']['notes'] ?? null)<p>{{ $item['wishlist_item']['notes'] }}</p>@endif
+@endforeach
+
+@unless ($is_owner)
+    <s:wishlist:import><button type="submit">Save these to my wishlist</button></s:wishlist:import>
+@endunless
+```
+
+</details>
 
 `{{ wishlist:import }}` copies the items onto the visitor's default list. With the browser driver the script does it in their browser. Items they already have, and anything over the list's limit, are skipped.
 

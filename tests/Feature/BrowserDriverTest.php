@@ -74,6 +74,24 @@ class BrowserDriverTest extends TestCase
     }
 
     #[Test]
+    public function a_blade_partial_draws_the_list_too(): void
+    {
+        file_put_contents(__DIR__.'/../__fixtures__/views/partials/saved.blade.php', '{{ $title }}|@foreach ($items as $item)[{{ $item[\'title\'] }}:{{ $item[\'wishlist_item\'][\'notes\'] ?? \'\' }}]@endforeach');
+
+        try {
+            $html = $this->postJson('/!/wishlist/render', [
+                'view' => Crypt::encryptString('partials/saved'),
+                't' => 'Birthday',
+                'items' => [['id' => self::A, 'data' => ['notes' => '<b>Size M</b>']]],
+            ])->assertOk()->getContent();
+
+            $this->assertSame('Birthday|[Linen Shirt:Size M]', $html);
+        } finally {
+            unlink(__DIR__.'/../__fixtures__/views/partials/saved.blade.php');
+        }
+    }
+
+    #[Test]
     public function posted_items_are_drawn_with_their_notes_held_to_the_saving_rules(): void
     {
         file_put_contents(__DIR__.'/../__fixtures__/views/partials/saved.antlers.html', '{{ title }}|{{ items }}[{{ title }}:{{ wishlist_item:notes }}:{{ wishlist_item:quantity }}:{{ wishlist_item:price }}]{{ /items }}');

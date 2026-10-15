@@ -19,6 +19,18 @@ One list, as a pair. The default list, or `list="id"`.
 {{ /wishlist }}
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+<s:wishlist>
+    {{ $title }} – {{ $count }} items
+    @foreach ($items as $item){{ $item['title'] }}@endforeach
+</s:wishlist>
+```
+
+</details>
+
 | Variable | |
 | --- | --- |
 | `id` | The list's ID. Empty when the visitor has no lists yet. |
@@ -39,6 +51,19 @@ Each of the visitor's lists, the default first, with the same variables as above
     {{ if no_results }}No lists yet.{{ else }}<a href="#{{ id }}">{{ title }} ({{ count }})</a>{{ /if }}
 {{ /wishlist:lists }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+@forelse (Statamic::tag('wishlist:lists')->fetch() as $list)
+    <a href="#{{ $list['id'] }}">{{ $list['title'] }} ({{ $list['count'] }})</a>
+@empty
+    No lists yet.
+@endforelse
+```
+
+</details>
 
 Inside the loop, the list forms (`rename_list`, `delete_list` and the rest) act on that loop's list.
 
@@ -79,6 +104,15 @@ Whether an entry is on a list. Alias: `{{ wishlist:in_list }}`.
 ```antlers
 {{ if {wishlist:has id="{{ id }}"} }}♥{{ /if }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+@if (Statamic::tag('wishlist:has')->param('id', $id)->fetch()) ♥ @endif
+```
+
+</details>
 
 ### `{{ wishlist:count }}`
 
@@ -124,6 +158,19 @@ Inside the tag, `{{ added }}` (or `{{ in_list }}`) says whether the entry is on 
 {{ /wishlist:add }}
 ```
 
+<details>
+<summary>Blade</summary>
+
+```blade
+<s:wishlist:add :id="$id">
+    <input name="notes" placeholder="Size, colour…">
+    <input name="quantity" type="number" value="1" min="1">
+    <button type="submit">Add to wishlist</button>
+</s:wishlist:add>
+```
+
+</details>
+
 ### `{{ wishlist:toggle_attrs }}`
 
 Attributes for a button of your own, which the script makes save and unsave the entry: `data-wishlist-toggle`, `data-wishlist-list` and `aria-pressed`.
@@ -131,6 +178,15 @@ Attributes for a button of your own, which the script makes save and unsave the 
 ```antlers
 <button class="heart" {{ wishlist:toggle_attrs id="{{ id }}" }}>♥</button>
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+<button class="heart" {!! Statamic::tag('wishlist:toggle_attrs')->param('id', $id)->fetch() !!}>♥</button>
+```
+
+</details>
 
 Takes `id` (or `entry`) and `list`. Needs the script.
 
@@ -162,6 +218,17 @@ For the [shared page](sharing.md#the-shared-page): copies the shared list's item
     {{ wishlist:import }}<button type="submit">Save these to my wishlist</button>{{ /wishlist:import }}
 {{ /unless }}
 ```
+
+<details>
+<summary>Blade</summary>
+
+```blade
+@unless ($is_owner)
+    <s:wishlist:import><button type="submit">Save these to my wishlist</button></s:wishlist:import>
+@endunless
+```
+
+</details>
 
 ## Rendering and the script
 

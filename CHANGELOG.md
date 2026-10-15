@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Blade.** Every tag works from Blade templates, with Statamic's `<s:wishlist:…>` tags and `Statamic::tag()`; `wishlist:render` partials and the shared page can be Blade views. Every example in the README and docs now has a Blade version, and tests cover them.
+
 ## 1.0.3 (2026-10-15)
 
 ### Fixed
