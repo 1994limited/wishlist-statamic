@@ -2,7 +2,7 @@
 
 This page builds a wishlist into a site step by step: the script, a save button, a count, a wishlist page, several lists and a shared page. Every step works with all three [drivers](drivers.md). For every tag and parameter, see [Tags](tags.md). For complete templates to copy, see [Examples](examples.md).
 
-![Dog-ear Books, the demo shop these examples come from](images/shop.png)
+![Dog-ear Books, the demo shop these examples come from](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/wishlist/charts/shop.png)
 
 ### Antlers or Blade
 
@@ -201,7 +201,7 @@ With a server driver you can also loop over the list directly, without a partial
 
 That won't redraw itself or work with the browser driver, though. `{{ wishlist:render }}` does both.
 
-![A wishlist page with a list picker, notes, a share link and list forms](images/wishlist.png)
+![A wishlist page with a list picker, notes, a share link and list forms](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/wishlist/charts/wishlist.png)
 
 ## 5. Several lists
 

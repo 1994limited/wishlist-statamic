@@ -4,7 +4,7 @@
 
 ## Wishlists
 
-![Content → Wishlists, with the most saved entries](images/cp-wishlists.png)
+![Content → Wishlists, with the most saved entries](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/wishlist/charts/cp-wishlists.png)
 
 The list of lists, the most recently changed first, 25 to a page:
 
@@ -18,7 +18,7 @@ Beside it, **Most saved** shows the ten entries on the most lists, linking to ea
 
 ## A list
 
-![One list in the Control Panel](images/cp-wishlist.png)
+![One list in the Control Panel](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/wishlist/charts/cp-wishlist.png)
 
 Opening a list shows its owner, how many items it has, whether it's their default, when it was made and last changed, and its share link, with a button to copy it.
 

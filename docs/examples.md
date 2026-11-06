@@ -4,7 +4,7 @@ Complete templates to copy. They work with all three drivers, with or without st
 
 These are the templates behind the screenshots in these docs, simplified. The [demo shop](demo.md) has them in full, as a site you can run.
 
-![The demo shop on a phone](images/shop-mobile.png)
+![The demo shop on a phone](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/wishlist/charts/shop-mobile.png)
 
 ## Layout
 

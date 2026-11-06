@@ -68,7 +68,7 @@ With the browser driver, build those links in JavaScript from `Wishlist.shareUrl
 
 ## The shared page
 
-![A shared list, with "Save all 4 to my list"](images/shared.png)
+![A shared list, with "Save all 4 to my list"](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/wishlist/charts/shared.png)
 
 
 The link opens `wishlist/shared` (set by `share.route`), rendered with the addon's template inside your site's `layout`. The page sends `X-Robots-Tag: noindex`, so shared lists stay out of search results.

@@ -2,7 +2,7 @@
 
 **Dog-ear Books** is a small, made-up bookshop built with Wishlist, at [1994limited/wishlist-statamic-demo](https://github.com/1994limited/wishlist-statamic-demo). Every screenshot in these docs comes from it. Run it to try Wishlist before you build with it, or copy its templates as a starting point.
 
-![Dog-ear Books' shelves, with three books saved by their bookmark ribbons](images/shop.png)
+![Dog-ear Books' shelves, with three books saved by their bookmark ribbons](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/wishlist/charts/shop.png)
 
 It shows:
 

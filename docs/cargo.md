@@ -4,7 +4,7 @@ With [Cargo](https://builtwithcargo.dev) installed, Wishlist knows which entries
 
 There's nothing to turn on. Without Cargo, none of this appears: `{{ wishlist:add_to_cart }}` renders nothing, items have no `cargo` values, and an item with a `variant` can't be saved.
 
-![A saved list with prices, editions, a price drop and Add to basket](images/cargo-list.png)
+![A saved list with prices, editions, a price drop and Add to basket](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/wishlist/charts/cargo-list.png)
 
 **See it working:** [Dog-ear Books with Cargo](https://github.com/1994limited/wishlist-cargo-demo) is the demo shop with the books for sale, in hardback and paperback.
 
